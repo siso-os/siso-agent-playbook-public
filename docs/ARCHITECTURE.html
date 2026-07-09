@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SISO Agent Playbook — Architecture</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #080b10;
+      --panel: #10151d;
+      --panel-2: #151c26;
+      --line: #2a3442;
+      --text: #edf4ff;
+      --muted: #9aa9bc;
+      --cyan: #52e4d8;
+      --blue: #6aa8ff;
+      --amber: #ffc66d;
+      --red: #ff758f;
+      --green: #79e49d;
+      --shadow: 0 24px 70px rgba(0, 0, 0, .34);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at 12% 0%, rgba(82, 228, 216, .10), transparent 32rem),
+        radial-gradient(circle at 95% 8%, rgba(106, 168, 255, .10), transparent 28rem),
+        var(--bg);
+      color: var(--text);
+      font: 16px/1.65 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    a { color: var(--cyan); }
+    code {
+      color: #d7e7ff;
+      background: #080c12;
+      border: 1px solid #263242;
+      border-radius: .38rem;
+      padding: .08rem .36rem;
+      font: .92em ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
+
+    .shell { width: min(1180px, calc(100% - 32px)); margin: 0 auto; }
+    header { padding: 72px 0 34px; }
+    .eyebrow {
+      color: var(--cyan);
+      font: 700 .76rem/1.2 ui-monospace, SFMono-Regular, Menlo, monospace;
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+    h1 { max-width: 900px; margin: 14px 0 18px; font-size: clamp(2.6rem, 7vw, 5.8rem); line-height: .98; letter-spacing: -.055em; }
+    .lede { max-width: 790px; margin: 0; color: #bdcadb; font-size: clamp(1.02rem, 2vw, 1.28rem); }
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      margin-top: 36px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--line);
+      box-shadow: var(--shadow);
+    }
+    .summary div { padding: 18px 20px; background: rgba(16, 21, 29, .94); }
+    .summary strong { display: block; color: var(--text); font-size: 1.05rem; }
+    .summary span { color: var(--muted); font-size: .9rem; }
+
+    main { padding-bottom: 72px; }
+    section { margin-top: 70px; }
+    h2 { margin: 0 0 10px; font-size: clamp(1.7rem, 4vw, 2.45rem); letter-spacing: -.035em; }
+    .section-copy { max-width: 760px; margin: 0 0 26px; color: var(--muted); }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(135px, 1fr));
+      gap: 12px;
+      align-items: stretch;
+    }
+    .stage {
+      position: relative;
+      min-height: 205px;
+      padding: 18px;
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      background: linear-gradient(150deg, rgba(21, 28, 38, .98), rgba(11, 15, 21, .98));
+      box-shadow: 0 16px 38px rgba(0, 0, 0, .22);
+    }
+    .stage:not(:last-child)::after {
+      content: "→";
+      position: absolute;
+      z-index: 2;
+      top: 50%;
+      right: -18px;
+      width: 24px;
+      color: var(--cyan);
+      text-align: center;
+      transform: translateY(-50%);
+      font-weight: 800;
+    }
+    .stage .number { color: var(--cyan); font: 700 .72rem ui-monospace, monospace; letter-spacing: .12em; }
+    .stage h3 { margin: 9px 0 7px; font-size: 1.03rem; }
+    .stage p { margin: 0; color: var(--muted); font-size: .89rem; }
+    .stage .refs { display: block; margin-top: 14px; color: #c7d7eb; font: .76rem/1.45 ui-monospace, monospace; }
+
+    .callout {
+      display: grid;
+      grid-template-columns: 1.15fr .85fr;
+      gap: 18px;
+      margin-top: 24px;
+    }
+    .card {
+      padding: 24px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(16, 21, 29, .84);
+    }
+    .card h3 { margin: 0 0 10px; }
+    .card p { margin: 0; color: var(--muted); }
+    .contract { display: grid; gap: 10px; margin-top: 16px; }
+    .contract div { display: flex; gap: 12px; align-items: baseline; padding-top: 10px; border-top: 1px solid #222c39; }
+    .contract b { min-width: 118px; color: var(--amber); font-family: ui-monospace, monospace; font-size: .82rem; }
+    .contract span { color: #c2cedd; font-size: .92rem; }
+
+    .laws { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; counter-reset: law; }
+    .law {
+      counter-increment: law;
+      padding: 22px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: var(--panel);
+    }
+    .law::before {
+      content: "0" counter(law);
+      color: var(--blue);
+      font: 700 .76rem ui-monospace, monospace;
+    }
+    .law h3 { margin: 12px 0 8px; font-size: 1.04rem; }
+    .law p { margin: 0; color: var(--muted); font-size: .9rem; }
+
+    .wiring { width: 100%; border-collapse: collapse; overflow: hidden; border: 1px solid var(--line); border-radius: 16px; background: var(--panel); }
+    .wiring th, .wiring td { padding: 15px 17px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+    .wiring th { color: var(--cyan); background: #0b1017; font: 700 .75rem ui-monospace, monospace; letter-spacing: .08em; text-transform: uppercase; }
+    .wiring td { color: #c4d0df; }
+    .wiring tr:last-child td { border-bottom: 0; }
+    .wiring td:first-child { color: var(--text); font-weight: 700; }
+
+    .runbook { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    .runbook .card { min-height: 185px; }
+    .runbook .tag { display: inline-block; margin-bottom: 12px; color: var(--green); font: 700 .72rem ui-monospace, monospace; letter-spacing: .1em; text-transform: uppercase; }
+    footer { padding: 26px 0 54px; color: #718096; border-top: 1px solid #18202b; font-size: .88rem; }
+
+    @media (max-width: 1050px) {
+      .flow { grid-template-columns: repeat(2, 1fr); }
+      .stage:not(:last-child)::after { display: none; }
+      .laws { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 720px) {
+      header { padding-top: 46px; }
+      .summary, .callout, .runbook, .flow, .laws { grid-template-columns: 1fr; }
+      .wiring { display: block; overflow-x: auto; }
+      .stage { min-height: auto; }
+    }
+  </style>
+</head>
+<body>
+  <header class="shell">
+    <div class="eyebrow">SISO Agent Playbook / System Map</div>
+    <h1>A fleet that can explain, constrain, and test itself.</h1>
+    <p class="lede">This repository is an operating layer around model workers. It turns available model lanes into bounded jobs, gates them with governance, observes them mechanically, and tests the operating doctrine for drift.</p>
+    <div class="summary" aria-label="Architecture summary">
+      <div><strong>Input</strong><span>A named task with a bounded brief</span></div>
+      <div><strong>Output</strong><span>A result file, verdict, and telemetry event</span></div>
+      <div><strong>Safety loop</strong><span>Heartbeat before work; stack-check after change</span></div>
+    </div>
+  </header>
+
+  <main class="shell">
+    <section id="machine">
+      <div class="eyebrow">The Machine</div>
+      <h2>Seven layers, one direction of travel</h2>
+      <p class="section-copy">Read left to right. Each layer narrows uncertainty or makes the previous layer observable. No prose-only promise is trusted when a gate, file, timer, or test can enforce it.</p>
+      <div class="flow">
+        <article class="stage"><span class="number">01</span><h3>Lanes</h3><p>Claude, Codex, MiniMax, and remote workers are execution capacity—not interchangeable personalities.</p><span class="refs">skills/model-routing<br>skills/subagents</span></article>
+        <article class="stage"><span class="number">02</span><h3>Governance</h3><p>Bifrost budgets and rate limits cap spend outside the agent’s own judgment.</p><span class="refs">BIFROST_VIRTUAL_KEY<br>gateway policy</span></article>
+        <article class="stage"><span class="number">03</span><h3>Heartbeat</h3><p><code>lane-health</code> probes availability, auth, limits, reachability, and stale processes every ten minutes.</p><span class="refs">bin/lane-health<br>LANE-HEALTH.json</span></article>
+        <article class="stage"><span class="number">04</span><h3>Dispatch Tools</h3><p>Brief linting, fresh workers, timeouts, event waits, evidence capture, and automatic teardown bound each job.</p><span class="refs">bin/brief-lint<br>bin/mini-*<br>bin/herdr-await</span></article>
+        <article class="stage"><span class="number">05</span><h3>Prompt Bank</h3><p>Reusable briefs define worker roles and return contracts before a model sees the task.</p><span class="refs">prompts/*.md<br>skills/fan-out</span></article>
+        <article class="stage"><span class="number">06</span><h3>Telemetry</h3><p>Events, logs, state, and task IDs join model activity back to delivered work.</p><span class="refs">.agents/telemetry<br>skills/telemetry</span></article>
+        <article class="stage"><span class="number">07</span><h3>Stack Check</h3><p>A weekly invariant suite verifies the tools, links, governance, heartbeat, guards, and routing pointers still exist.</p><span class="refs">bin/stack-check<br>launchd weekly</span></article>
+      </div>
+
+      <div class="callout">
+        <article class="card">
+          <h3>The control loop</h3>
+          <p>A coordinator checks health, chooses a measured lane, starts one fresh worker with one prompt-bank brief, and waits on a file or process event. The worker exits. Telemetry records the outcome. Scheduled checks make broken assumptions visible before the next large wave.</p>
+          <div class="contract">
+            <div><b>before</b><span>Read <code>$WORKSPACE/.agents/telemetry/LANE-HEALTH.json</code>.</span></div>
+            <div><b>during</b><span>Run a bounded command with a named result path and timeout.</span></div>
+            <div><b>after</b><span>Capture PASS, FAIL, or BLOCKED plus evidence; then terminate the worker.</span></div>
+          </div>
+        </article>
+        <article class="card">
+          <h3>The installation boundary</h3>
+          <p><code>install.sh</code> projects this repository into a user’s machine: skills become symlinks, tools become executable copies, telemetry gets a workspace home, and launchd gets generated path-aware schedules. <code>uninstall.sh</code> uses the install manifest to remove owned files and restore collisions.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="laws">
+      <div class="eyebrow">The Five Laws</div>
+      <h2>Doctrine expressed as mechanics</h2>
+      <p class="section-copy">These are the stable rules. Individual models, prompts, and tools may change; the laws define what replacements must preserve.</p>
+      <div class="laws">
+        <article class="law"><h3>One agent, one task</h3><p>Start with fresh context. Do not reuse an accumulating session as a worker queue.</p></article>
+        <article class="law"><h3>Completion is an event</h3><p>Wait on files, process status, or explicit verdicts. Never spend model turns polling a terminal.</p></article>
+        <article class="law"><h3>Budgets are infrastructure</h3><p>Put limits in the gateway and probes in the heartbeat. Discipline alone is not a control plane.</p></article>
+        <article class="law"><h3>Route by evidence</h3><p>Use benchmark strengths as the prior and local task outcomes as the posterior.</p></article>
+        <article class="law"><h3>Test the doctrine</h3><p>Encode rules in scripts, gates, schedules, and invariant checks because prose decays.</p></article>
+      </div>
+    </section>
+
+    <section id="wiring">
+      <div class="eyebrow">Reference Graph</div>
+      <h2>How the pieces point at each other</h2>
+      <p class="section-copy">The playbook stays understandable because every artifact has a small, explicit set of upstream inputs and downstream consumers.</p>
+      <table class="wiring">
+        <thead><tr><th>Piece</th><th>Reads / depends on</th><th>Writes / enables</th></tr></thead>
+        <tbody>
+          <tr><td><code>skills/model-routing</code></td><td>Benchmark matrix and observed lane outcomes</td><td>A lane choice used by coordinators and <code>subagents</code></td></tr>
+          <tr><td><code>skills/subagents</code></td><td>Routing guidance, lane health, task shape</td><td>A concrete dispatch recipe and return contract</td></tr>
+          <tr><td><code>prompts/</code></td><td>The task, role, constraints, and named verification surface</td><td>A bounded worker brief accepted by <code>brief-lint</code></td></tr>
+          <tr><td><code>bin/brief-lint</code></td><td>Prompt-bank or custom brief text</td><td>Permission to dispatch—or a fail-closed rejection</td></tr>
+          <tr><td><code>bin/mini-headless</code> / <code>mini-task</code></td><td>Linted brief, MiniMax wrapper, timeout, workspace</td><td>Result files and telemetry event logs</td></tr>
+          <tr><td><code>bin/herdr-await</code></td><td>Pane status or a named result file</td><td>One completion event, captured evidence, optional teardown</td></tr>
+          <tr><td><code>bin/lane-health</code></td><td>Bifrost key, gateway, local tools, optional remote mini</td><td><code>LANE-HEALTH.json</code>, flip log, macOS notification</td></tr>
+          <tr><td><code>skills/telemetry</code></td><td>Health state, events, task IDs, rollups</td><td>The operating reflex: check, label, measure</td></tr>
+          <tr><td><code>bin/stack-check</code></td><td>Installed tools, skill links, governance DB, heartbeat, workspace pointers</td><td>A PASS/FAIL drift verdict with named repairs</td></tr>
+          <tr><td><code>install.sh</code></td><td>This repo, <code>HOME</code>, <code>WORKSPACE</code>, optional <code>PREFIX</code></td><td>User projection, launch agents, telemetry tree, rollback manifest</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="operate">
+      <div class="eyebrow">Operate It</div>
+      <h2>The stranger’s runbook</h2>
+      <div class="runbook">
+        <article class="card"><span class="tag">Install</span><h3>Project the repo</h3><p>Run <code>WORKSPACE="$HOME/SISO_Workspace" ./install.sh</code>, set the Bifrost key in the generated secrets file, and ensure <code>~/bin</code> is on <code>PATH</code>.</p></article>
+        <article class="card"><span class="tag">Dispatch</span><h3>Check, brief, run</h3><p>Confirm a lane is UP, select a prompt, name the result path and timeout, then use the smallest dispatch tool that fits the job.</p></article>
+        <article class="card"><span class="tag">Verify</span><h3>Trust artifacts</h3><p>Read the worker verdict and evidence, inspect telemetry, and use <code>stack-check</code> whenever the stack changes or the weekly schedule reports drift.</p></article>
+      </div>
+    </section>
+  </main>
+
+  <footer><div class="shell">SISO Agent Playbook · Portable paths are controlled by <code>WORKSPACE</code>, <code>HOME</code>, and installer <code>PREFIX</code>.</div></footer>
+</body>
+</html>

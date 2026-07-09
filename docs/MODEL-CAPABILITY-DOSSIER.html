@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SISO Model Fleet — Capability Dossier</title>
+  <style>
+    :root{--bg:#070a10;--panel:#0d121c;--panel2:#111827;--line:#263247;--text:#e8edf7;--muted:#9eabc0;--cyan:#5ee7f2;--blue:#78a9ff;--violet:#bc9cff;--green:#65e6a7;--amber:#ffc96b;--red:#ff7b8a;--fable:#dc8cff;--opus:#ffad66;--sol:#66d9ff;--m3:#68e0aa;--haiku:#aeb9ca}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(circle at 85% 0,#17213c 0,transparent 34%),var(--bg);color:var(--text);font:15px/1.55 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}a{color:var(--cyan)}code{font:13px/1.45 ui-monospace,SFMono-Regular,Menlo,monospace;color:#c8d8ff;background:#151d2c;padding:.12rem .35rem;border-radius:5px}main{max-width:1500px;margin:auto;padding:34px 28px 80px}.hero{border:1px solid var(--line);background:linear-gradient(135deg,rgba(18,27,45,.96),rgba(10,14,23,.96));border-radius:20px;padding:32px;box-shadow:0 24px 80px #0008}.eyebrow{color:var(--cyan);text-transform:uppercase;letter-spacing:.16em;font-weight:800;font-size:12px}.hero h1{font-size:clamp(32px,5vw,64px);line-height:1.02;margin:.35rem 0 1rem;max-width:950px}.hero p{max-width:1040px;color:var(--muted);font-size:17px}.verdict{display:grid;grid-template-columns:repeat(5,minmax(130px,1fr));gap:10px;margin-top:24px}.chip{border:1px solid var(--line);border-radius:13px;padding:13px;background:#0b111c}.chip b{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}.fable b{color:var(--fable)}.opus b{color:var(--opus)}.sol b{color:var(--sol)}.m3 b{color:var(--m3)}.haiku b{color:var(--haiku)}nav{position:sticky;top:0;z-index:4;margin:18px 0;padding:10px 14px;border:1px solid var(--line);border-radius:13px;background:#080c13eF;backdrop-filter:blur(10px);display:flex;gap:16px;flex-wrap:wrap}nav a{text-decoration:none;color:var(--muted);font-weight:700;font-size:13px}nav a:hover{color:var(--cyan)}section{margin:44px 0}h2{font-size:28px;margin:0 0 14px}h3{font-size:19px;margin:24px 0 10px}.sub{color:var(--muted);max-width:1050px}.callout{border-left:4px solid var(--cyan);background:#0d1622;padding:16px 18px;border-radius:0 12px 12px 0;margin:18px 0}.warn{border-left-color:var(--amber)}.danger{border-left-color:var(--red)}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.card{background:linear-gradient(180deg,#101725,#0b1019);border:1px solid var(--line);border-radius:16px;padding:20px}.card h3{margin:0 0 8px}.card ul{padding-left:20px;margin-bottom:0}.metric-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:18px 0}.metric{background:#0d1421;border:1px solid var(--line);border-radius:12px;padding:14px}.metric strong{display:block;font-size:24px;color:var(--cyan)}.metric span{color:var(--muted);font-size:12px}.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:15px;background:#0b1019}table{border-collapse:collapse;width:100%;min-width:1050px}th,td{padding:13px 12px;text-align:left;vertical-align:top;border-bottom:1px solid #202a3b}th{position:sticky;top:0;background:#121a28;color:#dce6f7;font-size:12px;text-transform:uppercase;letter-spacing:.07em}tr:last-child td{border-bottom:0}.winner{font-weight:900;color:var(--green)}.runner{color:var(--blue);font-weight:750}.avoid{color:var(--red)}.confidence{display:inline-block;border:1px solid currentColor;border-radius:999px;padding:1px 7px;font:700 11px/1.5 ui-monospace,monospace;margin-left:4px}.a{color:var(--green)}.b{color:var(--amber)}.c{color:var(--violet)}.num{white-space:nowrap;color:#d8e5ff}.profile{display:grid;grid-template-columns:220px 1fr;gap:22px}.identity{border-right:1px solid var(--line);padding-right:20px}.identity .rank{font-size:52px;font-weight:900;line-height:1}.identity small{color:var(--muted)}.cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.mini{background:#0b111c;border:1px solid #222d40;border-radius:12px;padding:14px}.mini h4{margin:0 0 7px;color:var(--cyan)}.ladder{counter-reset:step;display:grid;gap:10px}.step{position:relative;border:1px solid var(--line);border-radius:14px;padding:15px 18px 15px 64px;background:#0c121d}.step:before{counter-increment:step;content:counter(step);position:absolute;left:17px;top:14px;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;background:#1b2c45;color:var(--cyan);font-weight:900}.disagree{display:grid;grid-template-columns:34px 1fr;gap:12px;border-bottom:1px solid var(--line);padding:14px 0}.disagree:last-child{border-bottom:0}.disagree .n{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;background:#422532;color:#ffadb7;font-weight:900}.source-list li{margin:.55rem 0}.tag{display:inline-block;border:1px solid var(--line);color:var(--muted);border-radius:6px;padding:1px 6px;font-size:11px;margin-right:4px}.foot{color:var(--muted);font-size:12px;border-top:1px solid var(--line);padding-top:20px}.bar{height:8px;background:#1a2332;border-radius:9px;overflow:hidden;margin-top:5px}.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--blue),var(--violet))}@media(max-width:900px){.verdict,.metric-row,.cols,.grid{grid-template-columns:1fr}.profile{grid-template-columns:1fr}.identity{border-right:0;border-bottom:1px solid var(--line);padding:0 0 15px}main{padding:20px 14px 60px}.hero{padding:23px}}
+  </style>
+</head>
+<body>
+<main>
+  <header class="hero">
+    <div class="eyebrow">Decision dossier · 2026-07-10 · Sol review</div>
+    <h1>Route by task shape, not by a global model leaderboard.</h1>
+    <p><strong>Bottom line:</strong> Opus 4.8 is the strongest evidenced repo-debugger; GPT-5.x in Codex is the terminal-grind winner; Fable 5 is the best scarce-seat planner and synthesis judge; MiniMax M3 is the throughput and browse/bulk economic engine; Haiku 4.5 is the fast bounded micro-task lane when it is actually available rather than silently aliased.</p>
+    <div class="verdict">
+      <div class="chip fable"><b>Fable 5</b>Lead, plan, synthesize, decide</div>
+      <div class="chip opus"><b>Opus 4.8</b>Deep repo diagnosis and UI agency</div>
+      <div class="chip sol"><b>Sol / Codex</b>Terminal execution and adversarial proof</div>
+      <div class="chip m3"><b>MiniMax M3</b>Bulk throughput, browsing, extraction</div>
+      <div class="chip haiku"><b>Haiku 4.5</b>Fast, small, low-latency bounded work</div>
+    </div>
+  </header>
+
+  <nav><a href="#matrix">Winner Matrix</a><a href="#benchmarks">Benchmarks</a><a href="#profiles">Profiles</a><a href="#economics">Economics</a><a href="#ladder">Escalation</a><a href="#disagreements">Disagreements</a><a href="#sources">Sources</a></nav>
+
+  <section id="matrix">
+    <h2>Scenario × Model Winners</h2>
+    <p class="sub">Cell labels combine a routing verdict with the strongest relevant number. Grades: <span class="confidence a">A measured</span> independent benchmark or SISO telemetry; <span class="confidence b">B vendor</span> first-party/vendor-reported; <span class="confidence c">C inference</span> cross-benchmark or operational judgment. “Win” means expected outcome for the stated task shape—not universal intelligence.</p>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Scenario</th><th>Claude Fable 5</th><th>Claude Opus 4.8</th><th>GPT-5.6 Sol / GPT-5.x Codex</th><th>MiniMax M3</th><th>Claude Haiku 4.5</th></tr></thead>
+      <tbody>
+        <tr><td><strong>Repo-level bug fixing</strong><br><small>subtle, cross-module, ambiguous failure</small></td><td>Strong diagnosis; preserve for lead synthesis <span class="confidence c">C</span></td><td class="winner">WIN — SWE-Bench Pro <span class="num">69.2%</span> <span class="confidence b">B</span><br>Best when reading history, tracing regressions, and making judgment-heavy patches.</td><td class="runner">Runner-up — SWE-Pro <span class="num">58.6%</span> anchor; stronger once terminal iteration dominates <span class="confidence b">B/C</span></td><td>Viable bounded fixes: SWE-Pro <span class="num">59.0%</span>; SWE-Verified <span class="num">80.5%</span> <span class="confidence b">B</span><br>Require tests and narrow ownership.</td><td>Use only for localized fixes with obvious tests; no comparative current repo benchmark found <span class="confidence c">C</span></td></tr>
+        <tr><td><strong>Greenfield feature build</strong><br><small>spec → implementation → working product</small></td><td class="runner">Best product/spec lead; AA v4.1 <span class="num">60</span> (#1) <span class="confidence a">A</span></td><td>Best for architecture-rich build where hidden constraints dominate <span class="confidence c">C</span></td><td class="winner">WIN for implementation-heavy builds in Codex — Terminal-Bench <span class="num">82.7%</span> <span class="confidence a">A</span><br>Pair with Fable spec for best fleet outcome.</td><td>Best low-cost N-version prototypes and bounded components; compile-gate every slice <span class="confidence c">C</span></td><td>Fast scaffolding and tiny components; escalate at first integration ambiguity <span class="confidence c">C</span></td></tr>
+        <tr><td><strong>Terminal / mechanical long-grind</strong><br><small>migrations, multi-file edits, test-fix loops</small></td><td class="avoid">Do not spend scarce lead seat here <span class="confidence c">C</span></td><td>Second: Terminal-Bench <span class="num">74.6%</span> <span class="confidence a">A</span></td><td class="winner">CLEAR WIN — Terminal-Bench <span class="num">82.7%</span> <span class="confidence a">A</span></td><td>Third: Terminal-Bench <span class="num">66.0%</span> <span class="confidence b">B</span>; cheaper but more retries/verbosity expected.</td><td>Good only when grind decomposes into short independent commands <span class="confidence c">C</span></td></tr>
+        <tr><td><strong>Adversarial code review</strong><br><small>find hidden failure, challenge a proposed patch</small></td><td>Excellent final judge, but same-family review of Claude code reduces diversity <span class="confidence c">C</span></td><td class="runner">Best single-model semantic reviewer for repo invariants <span class="confidence c">C</span></td><td class="winner">WIN as cross-vendor critic — top-tier AA <span class="num">59</span> plus terminal reproduction advantage <span class="confidence a/c">A/C</span></td><td>High-value first-pass checklist review; separately verify consequential claims <span class="confidence c">C</span></td><td>Lint-like review and obvious issue sweep only <span class="confidence c">C</span></td></tr>
+        <tr><td><strong>Planning / architecture</strong><br><small>irreversible choices, decomposition, tradeoffs</small></td><td class="winner">WIN — AA v4.1 <span class="num">60</span> (#1) <span class="confidence a">A</span><br>Use for the plan, decision record, and final synthesis.</td><td class="runner">Best when architecture requires deep repo-grounded constraints; AA <span class="num">56</span> <span class="confidence a/c">A/C</span></td><td>Use as adversarial second opinion, implementation feasibility check <span class="confidence c">C</span></td><td>Use to gather options/evidence, not own irreversible judgment <span class="confidence c">C</span></td><td>Good for transforming a settled plan into task packets <span class="confidence c">C</span></td></tr>
+        <tr><td><strong>Research synthesis</strong><br><small>many sources → decision-grade thesis</small></td><td class="winner">WIN for final synthesis — AA v4.1 <span class="num">60</span> <span class="confidence a/c">A/C</span></td><td class="runner">Win when corpus is extremely long or sensitive/stability-prone <span class="confidence c">C</span></td><td>Best skeptical reviewer and technical-source verifier <span class="confidence c">C</span></td><td>Best acquisition and first-pass extraction; BrowseComp <span class="num">83.5%</span> vendor claim <span class="confidence b">B</span></td><td>Fast source triage and summaries, not final contested synthesis <span class="confidence c">C</span></td></tr>
+        <tr><td><strong>Bulk read / classify / extract</strong><br><small>hundreds of files, structured schema</small></td><td class="avoid">Wrong economic lane <span class="confidence c">C</span></td><td class="avoid">Only for ambiguous residue or verification sample <span class="confidence c">C</span></td><td>Use when extraction requires shell/code transforms or high precision <span class="confidence c">C</span></td><td class="winner">CLEAR WIN — <span class="num">$0.30/$1.20 per 1M</span>, 1M context <span class="confidence b">B</span><br>Fresh workers, strict JSON/compact return, sampled verification.</td><td class="runner">Win for latency-sensitive tiny shards if direct Haiku is available; Anthropic list price <span class="num">$1/$5</span> <span class="confidence b/c">B/C</span></td></tr>
+        <tr><td><strong>Browse / scrape tasks</strong><br><small>web navigation, source capture, extraction</small></td><td>Lead only for defining research questions and synthesis <span class="confidence c">C</span></td><td class="runner">OSWorld <span class="num">83.4%</span> supports strongest UI-computer control <span class="confidence b">B</span></td><td>Strong for browser + terminal hybrid verification; no directly comparable browse number verified <span class="confidence c">C</span></td><td class="winner">WIN for scaled browsing — BrowseComp <span class="num">83.5%</span>, MCP Atlas <span class="num">74.2%</span> <span class="confidence b">B</span></td><td>Good for straightforward page extraction; context/latency advantage, lower judgment ceiling <span class="confidence c">C</span></td></tr>
+        <tr><td><strong>Long context &gt;200k</strong><br><small>large repo/corpus, sustained coherence</small></td><td>Unknown public context specifics in verified sources; do not assume a window advantage <span class="confidence c">C</span></td><td class="winner">WIN for high-judgment long-context synthesis; 1M variant reported in local fleet matrix <span class="confidence b/c">B/C</span></td><td>High capability, but no verified &gt;200k product limit found in this pass; use external memory regardless <span class="confidence c">C</span></td><td class="runner">1M context and lowest ingestion cost <span class="confidence b">B</span><br>Best for scanning; weaker than Opus for subtle whole-corpus judgment.</td><td>200k context; therefore not a true &gt;200k lane without chunking <span class="confidence b">B</span></td></tr>
+        <tr><td><strong>Cost per verified outcome</strong><br><small>quality × attempts × operator time</small></td><td>High value only on decisions that prevent expensive downstream rework <span class="confidence c">C</span></td><td>Potentially costly overuse: <span class="num">60.95%</span> of observed fleet tokens; outcome attribution too weak for verdict <span class="confidence a">A</span></td><td class="runner">Best when bundled Codex access makes marginal token cost secondary and success rate avoids retries <span class="confidence c">C</span></td><td class="winner">PROVISIONAL WIN for bounded verified work — lowest stated token price; <span class="num">33.69%</span> of observed fleet tokens across M3 lanes <span class="confidence a/b/c">A/B/C</span></td><td>Can beat M3 on short latency-sensitive tasks, but costs ~3–4× M3 per token at list price <span class="confidence b/c">B/C</span></td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section id="benchmarks">
+    <h2>Benchmark Reconciliation</h2>
+    <div class="callout"><strong>The 61.4 Opus discrepancy is not an effort-setting mystery.</strong> Artificial Analysis’s April 9, 2026 v4.0 announcement reported Opus 4.8 at <strong>61.4</strong> on the prior index, alongside Fable 5 at 65 and M3 reasoning at 55. The May 12, 2026 v4.1 release changed the benchmark composition and rebaselined the scores: Fable 60, Sol-max 59, Opus 56, M3 base 44. Compare models only within the same index version.</div>
+    <div class="metric-row">
+      <div class="metric"><strong>60</strong><span>Fable 5 · AA Intelligence v4.1 · #1</span></div>
+      <div class="metric"><strong>59</strong><span>GPT-5.6 Sol max · AA v4.1 · #2</span></div>
+      <div class="metric"><strong>56</strong><span>Opus 4.8 · AA v4.1 · #5</span></div>
+      <div class="metric"><strong>44</strong><span>MiniMax M3 base · AA v4.1 · #1 open-weight</span></div>
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Anchor</th><th>Result</th><th>What it actually supports</th><th>Grade / caveat</th></tr></thead>
+      <tbody>
+        <tr><td>AA Intelligence Index v4.1</td><td>Fable 60 &gt; Sol-max 59 &gt; Opus 56 &gt; M3 base 44</td><td>General agentic/reasoning prior; supports Fable planning and Sol review, not a coding-specific winner.</td><td><span class="confidence a">A</span> independent composite, May 12 2026.</td></tr>
+        <tr><td>AA Intelligence Index v4.0</td><td>Fable 65; Opus 61.4; M3 reasoning 55</td><td>Historical snapshot only. Do not mix these scores with v4.1.</td><td><span class="confidence a">A</span> independent, Apr 9 2026.</td></tr>
+        <tr><td>SWE-Bench Pro</td><td>Opus 69.2 &gt; M3 59.0 &gt; GPT-5.5 58.6</td><td>Strongest anchor for Opus on difficult repo-level software engineering.</td><td><span class="confidence b">B</span> values surfaced through vendor/current fleet sources; scaffold and model-version differences limit clean comparison.</td></tr>
+        <tr><td>Terminal-Bench 2.1</td><td>GPT-5.x in Codex 82.7 &gt; Opus 74.6 &gt; M3 66.0</td><td>Directly supports Codex for terminal execution, iterative tool use, and long mechanical grinds.</td><td><span class="confidence a/b">A/B</span> independent benchmark family; some submitted numbers/vendor scaffolds differ.</td></tr>
+        <tr><td>SWE-Bench Verified</td><td>M3 80.5</td><td>M3 is capable coding labor when bounded and test-gated; it is not merely a cheap reader.</td><td><span class="confidence b">B</span> vendor-run; easier and less discriminating than SWE-Pro.</td></tr>
+        <tr><td>OSWorld</td><td>Opus 83.4 &gt; M3 70</td><td>Supports Opus for GUI/computer-use tasks where state perception and judgment matter.</td><td><span class="confidence b">B</span> vendor-reported snapshots and harness-sensitive.</td></tr>
+        <tr><td>BrowseComp / MCP Atlas</td><td>M3 83.5 / 74.2</td><td>Supports M3 as the scaled browsing and tool-acquisition worker.</td><td><span class="confidence b">B</span> vendor-reported; do not equate with final research synthesis.</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section id="profiles">
+    <h2>Per-Model Profiles</h2>
+
+    <article class="card profile fable">
+      <div class="identity"><div class="rank">60</div><b>Claude Fable 5</b><br><small>AA v4.1 · #1 general index</small></div>
+      <div><h3>Scarce-seat judgment model</h3><div class="cols">
+        <div class="mini"><h4>Outperforms when</h4><ul><li>The primary artifact is a plan, thesis, architecture, or final decision.</li><li>Many partial worker outputs need compression into one coherent answer.</li><li>Upstream judgment can prevent a fleet-wide execution mistake.</li></ul></div>
+        <div class="mini"><h4>Failure modes</h4><ul><li>Economic waste on bulk reading and mechanical implementation.</li><li>Local evidence reports classifier flips on sensitive/adult content and ping-spam.</li><li>Can become an immortal coordinator whose repeated context dominates spend.</li></ul></div>
+        <div class="mini"><h4>Cost / context / gotchas</h4><ul><li>Observed <strong>4.24%</strong> of fleet tokens—appropriately scarce relative to Opus.</li><li>Public price/context specifics were not independently verified in this pass.</li><li>Use a fresh synthesis seat over durable external state, not a permanently growing chat.</li></ul></div>
+      </div></div>
+    </article>
+
+    <article class="card profile opus">
+      <div class="identity"><div class="rank">69.2</div><b>Claude Opus 4.8</b><br><small>SWE-Bench Pro anchor</small></div>
+      <div><h3>Repo-judgment and computer-use specialist</h3><div class="cols">
+        <div class="mini"><h4>Outperforms when</h4><ul><li>The bug is distributed, underspecified, and requires semantic reconstruction.</li><li>Architecture must be inferred from a large existing repository.</li><li>GUI/computer state matters; OSWorld 83.4 is the strongest fleet anchor.</li></ul></div>
+        <div class="mini"><h4>Failure modes</h4><ul><li>Overuse as coordinator or routine worker creates enormous context resend.</li><li>Same-vendor review can share blind spots with Fable-generated plans.</li><li>High capability tempts monolithic sessions instead of explicit state and respawn.</li></ul></div>
+        <div class="mini"><h4>Cost / context / gotchas</h4><ul><li><strong>12.39B tokens, 60.95%</strong> of all observed lane tokens—the clearest routing alarm.</li><li>Local matrix reports a 1M-context variant; treat availability as deployment-specific.</li><li>Reserve for judgment-shaped residue, not every code edit.</li></ul></div>
+      </div></div>
+    </article>
+
+    <article class="card profile sol">
+      <div class="identity"><div class="rank">82.7</div><b>GPT-5.6 Sol / GPT-5.x Codex</b><br><small>Terminal-Bench 2.1 anchor</small></div>
+      <div><h3>Execution engine and independent skeptic</h3><div class="cols">
+        <div class="mini"><h4>Outperforms when</h4><ul><li>The task is terminal-native: edit, run, inspect, repair, repeat.</li><li>A plan or patch needs adversarial, cross-vendor challenge.</li><li>Greenfield work is implementation-heavy and acceptance tests are available.</li></ul></div>
+        <div class="mini"><h4>Failure modes</h4><ul><li>Not the measured repo-debugging champion; Opus leads SWE-Pro.</li><li>Can spend excessive reasoning on already-settled architecture if prompted too broadly.</li><li>“Sol” and “Codex” are not interchangeable: model capability and CLI scaffold jointly produce the 82.7 result.</li></ul></div>
+        <div class="mini"><h4>Cost / context / gotchas</h4><ul><li>Local matrix treats account cost as marginally separate from Claude-plan spend; not equivalent to zero economic cost.</li><li>No trusted per-lane token total exists in the supplied telemetry.</li><li>Dispatch utilization—not model ability—was locally observed as the limiting factor.</li></ul></div>
+      </div></div>
+    </article>
+
+    <article class="card profile m3">
+      <div class="identity"><div class="rank">1M</div><b>MiniMax M3</b><br><small>context window · $0.30/$1.20 per M</small></div>
+      <div><h3>Throughput engine with real coding ability</h3><div class="cols">
+        <div class="mini"><h4>Outperforms when</h4><ul><li>Work is wide, repetitive, schema-bound, and independently verifiable.</li><li>Browsing, scraping, source acquisition, classification, or extraction dominates.</li><li>Features can be sliced into owned files with compile/test gates.</li></ul></div>
+        <div class="mini"><h4>Failure modes</h4><ul><li>Verbose returns impose downstream reader and context costs.</li><li>Reused sessions account for severe burn; local evidence says fresh-per-task is structural.</li><li>May ask permission instead of acting, self-fan, or overclaim; separate verification matters.</li></ul></div>
+        <div class="mini"><h4>Cost / context / gotchas</h4><ul><li><strong>6.85B tokens, 33.69%</strong> across direct+Bifrost M3 lanes.</li><li>1M context is excellent for scanning, not proof of 1M-token reasoning coherence.</li><li>Throttle near 5–6 concurrent workers locally; enforce compact return contracts.</li></ul></div>
+      </div></div>
+    </article>
+
+    <article class="card profile haiku">
+      <div class="identity"><div class="rank">200k</div><b>Claude Haiku 4.5</b><br><small>context · $1/$5 per M list</small></div>
+      <div><h3>Low-latency micro-task model—not automatically M3</h3><div class="cols">
+        <div class="mini"><h4>Outperforms when</h4><ul><li>Response latency matters more than maximum reasoning depth.</li><li>The job is short, bounded, repetitive, and fits within 200k context.</li><li>A Claude-native format/style transformation needs minimal coordination.</li></ul></div>
+        <div class="mini"><h4>Failure modes</h4><ul><li>No current benchmark evidence here supports repo-level or architecture leadership.</li><li>Escalation can arrive too late if a “small” task hides integration ambiguity.</li><li>Local Bifrost routing may alias <code>model: haiku</code> to M3, erasing its distinct latency/behavior profile.</li></ul></div>
+        <div class="mini"><h4>Cost / context / gotchas</h4><ul><li>Only <strong>2.78M tokens, 0.014%</strong> observed—insufficient SISO outcome evidence.</li><li>More expensive per token than M3, so it must earn its lane through latency or fit.</li><li>Route explicitly and log the actual served model.</li></ul></div>
+      </div></div>
+    </article>
+  </section>
+
+  <section id="economics">
+    <h2>Cost Per Outcome: What We Know</h2>
+    <p class="sub">The telemetry is a spend map, not yet an ROI table. Its headline reports only two completed tasks over seven days and an 8.7% task-ID/token join rate. Therefore lane-level “cost per delivered task” cannot be assigned honestly.</p>
+    <div class="grid">
+      <div class="card"><h3>Observed lane share</h3>
+        <p>Opus 4.8 — 12.39B tokens / 60.95%</p><div class="bar"><i style="width:60.95%"></i></div>
+        <p>MiniMax M3 combined — 6.85B / 33.69%</p><div class="bar"><i style="width:33.69%"></i></div>
+        <p>Fable 5 — 0.862B / 4.24%</p><div class="bar"><i style="width:4.24%"></i></div>
+        <p>Other supplied lanes — 1.12%</p><div class="bar"><i style="width:1.12%"></i></div>
+      </div>
+      <div class="card"><h3>Decision interpretation</h3><ul><li><strong>Opus is the first optimization target:</strong> even a small de-escalation rate moves more spend than perfecting Haiku.</li><li><strong>M3’s cheap tokens are not free:</strong> verbose outputs, retries, and verifier time belong in the outcome denominator.</li><li><strong>Codex is under-measured:</strong> no lane total means no fleet-economic comparison; add run-ledger tokens/cost/outcome before declaring it cheapest.</li><li><strong>Task joins are the blocker:</strong> raise 8.7% attribution before using cost-per-outcome as a routing controller.</li></ul></div>
+    </div>
+    <div class="callout warn"><strong>Provisional economic order for bounded, verifiable tasks:</strong> M3 first; Haiku when latency has value; Codex when its higher success rate prevents expensive retries; Opus only when judgment difficulty justifies it; Fable only where upstream decision quality changes many downstream outcomes. This is a <span class="confidence c">C inference</span>, not a measured SISO ranking.</div>
+  </section>
+
+  <section id="ladder">
+    <h2>Refined Escalation Ladder</h2>
+    <p class="sub">The current “cheapest first, fail twice” ladder is too blunt. Escalation should begin with task classification, then respond to evidence. Two cheap failures can cost more than one correct expert pass; conversely, prestige routing creates the Opus burn visible in telemetry.</p>
+    <div class="ladder">
+      <div class="step"><strong>Classify the dominant difficulty.</strong> Bulk/latency → M3 or Haiku. Terminal iteration → Codex. Repo ambiguity → Opus. Irreversible planning/synthesis → Fable. Browse at scale → M3; GUI judgment → Opus.</div>
+      <div class="step"><strong>Choose the cheapest model with benchmark fit—not merely cheapest token.</strong> Include likely attempts, verification cost, latency, and downstream reader burden.</div>
+      <div class="step"><strong>Install a hard verifier before dispatch.</strong> Tests/compile/schema for code and extraction; source citations for research; explicit invariants for architecture. No verifier means route one tier higher or add a human gate.</div>
+      <div class="step"><strong>Escalate on one diagnostic signal.</strong> Immediate escalation for misunderstood invariants, cross-module ambiguity, irreversibility, or repeated hallucinated state. Permit a second attempt only for mechanical/test-local failures with a new clue.</div>
+      <div class="step"><strong>Escalate sideways by failure type.</strong> M3 mechanical failure → Codex. M3 semantic/repo failure → Opus. Opus plan uncertainty → Fable. Fable/Opus blind-spot risk → Sol cross-vendor review.</div>
+      <div class="step"><strong>Use PAIR only at leverage points.</strong> Fable produces the plan or synthesis; Sol attacks it. For repo-critical patches, Opus authors/diagnoses and Codex reproduces/tests. Do not pair every task.</div>
+      <div class="step"><strong>Reset context before raising model tier.</strong> Fresh session + compact external state can outperform escalation caused by a degraded, reused session—especially on M3 and long-running coordinators.</div>
+      <div class="step"><strong>Record actual model, attempts, verifier result, and delivered artifact.</strong> De-escalate proven task classes after repeated passes; promote only from measured failure patterns.</div>
+    </div>
+  </section>
+
+  <section id="disagreements">
+    <h2>Explicit Disagreements With Current <code>model-routing</code></h2>
+    <div class="card">
+      <div class="disagree"><div class="n">1</div><div><strong>Opus 61.4 is resolved, not “effort-config dependent.”</strong> It is a v4.0 score. The comparable v4.1 score is 56. Remove the unresolved note and label index versions.</div></div>
+      <div class="disagree"><div class="n">2</div><div><strong>Haiku 4.5 should not be defined as an M3 alias.</strong> That is a local routing implementation fact, not a capability fact. Preserve a direct-Haiku lane for low-latency bounded work and log the served model.</div></div>
+      <div class="disagree"><div class="n">3</div><div><strong>“Start at the cheapest capable tier; fail twice” is not universally economical.</strong> Judgment-shaped repo bugs and irreversible architecture should route directly to Opus/Fable; one diagnostic failure is enough when invariants are misunderstood.</div></div>
+      <div class="disagree"><div class="n">4</div><div><strong>“Fable and Sol are peers” overgeneralizes a one-point composite gap.</strong> They are complementary: Fable leads planning/synthesis; Sol leads terminal execution and cross-vendor criticism. Composite adjacency does not imply interchangeable task performance.</div></div>
+      <div class="disagree"><div class="n">5</div><div><strong>M3 browse strength and research synthesis must be separated.</strong> BrowseComp/MCP Atlas support acquisition and navigation. Final contested synthesis still belongs to Fable/Opus, with Sol as verifier.</div></div>
+      <div class="disagree"><div class="n">6</div><div><strong>“M3 outbenches Sonnet” is too broad to justify a universal ban.</strong> A composite index and price do not prove dominance on every task class. A ban may remain a fleet policy, but it is not benchmark-settled by the cited evidence.</div></div>
+      <div class="disagree"><div class="n">7</div><div><strong>Cost claims need outcome attribution.</strong> The current skill points to telemetry as posterior truth, but the supplied telemetry joins only 8.7% of tokens to task IDs. Treat economics as provisional until that instrumentation improves.</div></div>
+    </div>
+  </section>
+
+  <section id="sources">
+    <h2>Sources, Dates, Confidence</h2>
+    <ul class="source-list">
+      <li><span class="tag">A local measured</span><strong>SISO <code>.agents/telemetry/efficiency.json</code></strong>, read 2026-07-10. Lane totals, 7-day headline, reuse rate, task join rate. Directly measured spend; weak delivered-outcome denominator.</li>
+      <li><span class="tag">A local measured</span><strong>GQ-002 <code>RESULTS.html</code> §3 world table</strong>, produced 2026-07-10. Used for orchestration doctrine: disposable sessions, external memory, deterministic DAGs, durable execution, and enforcement-over-prompting.</li>
+      <li><span class="tag">Local prior</span><strong><code>~/.claude/skills/model-routing/SKILL.md</code></strong>, dated 2026-07-10. Starting fleet matrix and local operational scars; claims independently checked where possible.</li>
+      <li><span class="tag">A independent</span><strong>Artificial Analysis, “Intelligence Index v4.1,”</strong> published 2026-05-12. Verified benchmark composition change and scores: Fable 60, Sol-max 59, Opus 56, M3 base 44.</li>
+      <li><span class="tag">A independent</span><strong>Artificial Analysis, “Intelligence Index v4.0,”</strong> published 2026-04-09. Verified historical scores including Opus 61.4, Fable 65, M3 reasoning 55; not comparable to v4.1.</li>
+      <li><span class="tag">B vendor</span><strong>OpenAI, “Previewing GPT-5.6 Sol,”</strong> 2026. Used only to establish the model’s intended expert-reasoning/research positioning; independent AA score used for ranking.</li>
+      <li><span class="tag">B vendor</span><strong>MiniMax M3 launch/model materials,</strong> 2026. Price $0.30/$1.20 per million, 1M context, SWE-Verified 80.5, SWE-Pro 59.0, Terminal-Bench 66.0, BrowseComp 83.5, MCP Atlas 74.2. Vendor-run/harness-sensitive.</li>
+      <li><span class="tag">B vendor</span><strong>Anthropic Claude model documentation/pricing,</strong> checked 2026-07-10. Haiku 4.5 list pricing $1/$5 per million and 200k context. Availability and local alias behavior are deployment-specific.</li>
+      <li><span class="tag">B/C mixed</span><strong>Supplied benchmark anchors:</strong> SWE-Bench Pro (Opus 69.2, M3 59.0, GPT-5.5 58.6), Terminal-Bench 2.1 (Codex 82.7, Opus 74.6, M3 66), OSWorld (Opus 83.4, M3 70). Accepted where consistent with current fleet evidence; exact harness/source provenance should be captured in the next matrix refresh.</li>
+    </ul>
+    <div class="callout danger"><strong>Web-unverified or partially verified claims:</strong> Fable public price/context; GPT-5.6 Sol/Codex context limit and unit economics; independently reproduced SWE-Pro/OSWorld submissions for every model. These are deliberately not used as precise economic facts. Benchmark pages are dynamic; preserve dated snapshots in the next refresh.</div>
+  </section>
+
+  <footer class="foot">Decision rule: benchmark priors choose the first lane; verifier outcomes and SISO telemetry update it. Never infer capability from a gateway alias, and never infer cost-per-outcome from token totals without task attribution.</footer>
+</main>
+</body>
+</html>

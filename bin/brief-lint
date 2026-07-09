@@ -1,0 +1,37 @@
+#!/usr/bin/env python3
+"""brief-lint — validate a worker dispatch brief BEFORE it burns tokens (GQ-002 L5).
+Usage: brief-lint <brief-file>   or   ... | brief-lint -
+Exit 0 = OK, 64 = rejected, 65 = warnings only (with --warn-only or BRIEF_LINT_WARN=1 → exit 0).
+Checks (worker briefs):
+  MUST have a return contract  (RETURN / 'Return only' / OUTPUT / DONE.txt / PASS|FAIL)
+  MUST have a stop bound       (STOP / 'stop after' / turn or file budget / 'one-shot')
+  MUST NOT carry fan-out poison ('fan it WIDE', 'spawn sub-agents', recursive fan instructions)
+  MUST NOT carry reuse poison  ('continue your lane', 'keep this session', re-dispatch language)
+"""
+import sys, re, os
+
+WARN_ONLY = "--warn-only" in sys.argv or os.environ.get("BRIEF_LINT_WARN") == "1"
+args = [a for a in sys.argv[1:] if not a.startswith("--")]
+text = sys.stdin.read() if (not args or args[0] == "-") else open(args[0], errors="replace").read()
+
+errors, warns = [], []
+if not re.search(r"\bRETURN\b|[Rr]eturn only|\bOUTPUT\b|DONE\.txt|PASS\s*\|\s*FAIL|line 1 = PASS", text):
+    errors.append("no return contract (add: RETURN: <exact output shape / result path>)")
+if not re.search(r"\bSTOP\b|stop after|one[- ]shot|budget of \d+|at most \d+ (files|turns|greps)", text, re.I):
+    errors.append("no stop bound (add: STOP: <hard terminator — turn/file budget or completion condition>)")
+if re.search(r"fan\s+it\s+WIDE|spawn\s+(haiku\s+)?sub-?agents|fan\s+out\s+(more|further|recursively)", text, re.I):
+    errors.append("fan-out poison: workers must not self-spawn (2026-07-09 drain mechanism)")
+if re.search(r"continue\s+your\s+lane|keep\s+(this\s+)?session|re-?use\s+(the\s+)?(pane|session)|next\s+task\s*:", text, re.I):
+    errors.append("reuse poison: one agent = one task; fresh pane per task (fresh-agent law)")
+if len(text) > 24000:
+    warns.append(f"brief is {len(text)} bytes — MiniMax briefs should be <24k (context tax per turn)")
+if not re.search(r"CONSTRAINTS|read-?only|may (only )?write|write only", text, re.I):
+    warns.append("no CONSTRAINTS line (state read-only or allowed write paths)")
+
+for w in warns:  print(f"brief-lint WARN: {w}", file=sys.stderr)
+for e in errors: print(f"brief-lint FAIL: {e}", file=sys.stderr)
+if errors and not WARN_ONLY:
+    print("brief-lint: REJECTED (set BRIEF_LINT_WARN=1 for advisory mode)", file=sys.stderr)
+    sys.exit(64)
+print(f"brief-lint: OK ({len(warns)} warnings)" if not errors else "brief-lint: advisory pass (warnings above)", file=sys.stderr)
+sys.exit(0)

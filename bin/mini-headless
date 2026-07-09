@@ -1,0 +1,50 @@
+#!/bin/bash
+# mini-headless — ONE bounded MiniMax work unit, HEADLESS (GQ-002 L6 + Shaan 2026-07-10:
+# "we have headless minimax and should not only herdr … our load is crazy").
+#
+# Why headless over a pane: no interactive CLI process to keep alive, no bypass-gate,
+# no context accumulation, no per-turn re-send tax — the process EXITS when the task ends.
+# Visibility comes from the streamed log (tail -f the .log), not a terminal you watch.
+# This is the low-load lane. Use panes only when a human genuinely needs to watch live.
+#
+# Usage: mini-headless --brief <file> --label NAME [--out <resultfile>] [--timeout-s 900]
+set -uo pipefail
+WORKSPACE="${WORKSPACE:-${SISO_WORKSPACE:-$HOME/SISO_Workspace}}"
+BIN_DIR="${SISO_BIN_DIR:-$HOME/bin}"
+CLAUDE_MINI="${CLAUDE_MINI_BIN:-$BIN_DIR/claude-mini}"
+LINT="${BRIEF_LINT_BIN:-$BIN_DIR/brief-lint}"
+EVDIR="$WORKSPACE/.agents/telemetry/events"
+mkdir -p "$EVDIR"
+
+BRIEF="" LABEL="mh-$(date +%H%M%S)" OUT="" TIMEOUT=900
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --brief) BRIEF="$2"; shift 2;;
+    --label) LABEL="$2"; shift 2;;
+    --out) OUT="$2"; shift 2;;
+    --timeout-s) TIMEOUT="$2"; shift 2;;
+    *) echo "mini-headless: unknown arg $1" >&2; exit 64;;
+  esac
+done
+[ -f "$BRIEF" ] || { echo "mini-headless: --brief <file> required" >&2; exit 64; }
+[ -n "$OUT" ] || OUT="$EVDIR/${LABEL}.result.txt"
+LOG="$EVDIR/${LABEL}.log"
+
+# Contract gate (hard — managed lane)
+"$LINT" "$BRIEF" || exit 64
+
+# One-shot headless print. -p = print mode; the wrapper prints the final result text.
+# Bounded by timeout; stdin already /dev/null-guarded inside claude-mini.
+PROMPT="$(cat "$BRIEF")"
+: > "$LOG"
+( timeout "${TIMEOUT}s" "$CLAUDE_MINI" -p "$PROMPT" > "$OUT" 2> "$LOG"; echo "EXIT=$?" >> "$LOG" ) &
+PID=$!
+echo "mini-headless $LABEL running headless (pid $PID) — tail -f $LOG"
+wait $PID
+RC=$?
+# verdict from the result text (headless output is clean — no brief echo to poison it)
+VERDICT="UNCLEAR"
+if grep -qiE '(^|[^A-Z])FAIL([^A-Z]|$)' "$OUT" 2>/dev/null && ! grep -qiE '(^|[^A-Z])PASS([^A-Z]|$)' "$OUT" 2>/dev/null; then VERDICT=FAIL
+elif grep -qiE '(^|[^A-Z])PASS([^A-Z]|$)' "$OUT" 2>/dev/null; then VERDICT=PASS; fi
+echo "mini-headless $LABEL -> $VERDICT (rc=$RC, result: $OUT)"
+[ "$VERDICT" != "UNCLEAR" ]

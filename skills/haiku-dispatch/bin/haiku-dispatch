@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+# haiku-dispatch — fire-and-forget HEADLESS MiniMax worker (one bounded job, fresh context).
+#
+# REWRITTEN 2026-07-10 (GQ-002): the old template injected "fan it WIDE" + told workers to
+# self-spawn sub-agents — that was the 2026-07-09 drain mechanism, and since the claude-mini
+# guards it made EVERY dispatch die silently (guard exit 64, no handoff, caller none the wiser).
+# New law: ONE worker = ONE bounded job. Decomposition happens at the CALLER — fire N
+# haiku-dispatch calls in parallel; workers never self-fan. Fail-LOUD: a BLOCKED handoff is
+# always written, even when the worker dies at spawn.
+#
+# Usage:  haiku-dispatch <slug> <prompt-file|inline-prompt>
+#   handoff -> .orchestrate/handoffs/<slug>.haiku.md   log -> /tmp/haiku-<slug>.log
+set -euo pipefail
+
+[ "$#" -ge 2 ] || { echo "usage: haiku-dispatch <slug> <prompt-file|inline>" >&2; exit 2; }
+SLUG=$1; shift
+PROMPT_SRC="$*"
+[ -n "$PROMPT_SRC" ] || { echo "haiku-dispatch: no prompt given" >&2; exit 2; }
+if [ -f "$PROMPT_SRC" ]; then TASK=$(cat "$PROMPT_SRC"); else TASK=$PROMPT_SRC; fi
+
+REPO=$(pwd -P)
+CLAUDE_MINI="${CLAUDE_MINI_BIN:-${SISO_BIN_DIR:-$HOME/bin}/claude-mini}"
+TIMEOUT_BIN="$(command -v gtimeout 2>/dev/null || command -v timeout 2>/dev/null || true)"
+HANDOFF_DIR="$REPO/.orchestrate/handoffs"
+HANDOFF="$HANDOFF_DIR/$SLUG.haiku.md"
+LOG="/tmp/haiku-$SLUG.log"
+mkdir -p "$HANDOFF_DIR"
+[ -x "$CLAUDE_MINI" ] || { echo "haiku-dispatch: claude-mini not executable: $CLAUDE_MINI" >&2; exit 69; }
+[ -n "$TIMEOUT_BIN" ] || { echo "haiku-dispatch: install timeout or gtimeout" >&2; exit 69; }
+
+# Task-id join (GQ-002 L0): if the brief names a TASK-NNNN, the handoff must carry it so
+# tokens join to delivered work in the efficiency rollup.
+TASK_ID=$(printf '%s' "$TASK" | grep -oE 'TASK-[0-9]+' | head -1 || true)
+
+FULL_PROMPT="You are a bounded one-shot MiniMax worker. Do THIS ONE JOB in your own context — do not spawn sub-agents, do not expand scope.
+
+$TASK
+
+---
+EVIDENCE CONTRACT: every count / existence / classification claim in your output MUST be followed by its receipt (the exact command you ran + the raw output line). Use ABSOLUTE paths in every command (~ does not expand reliably in your shell). A claim without a receipt is discarded — mark UNVERIFIED if you can't produce it.
+
+MANDATORY HANDOFF (final step, never skip): via the Bash tool write the file
+  $HANDOFF
+containing:
+  1. a line that is EXACTLY  DONE  or  BLOCKED  (uppercase, alone)
+  2. one sentence: the outcome / headline number${TASK_ID:+
+  2b. the line: task: $TASK_ID}
+  3. the synthesized result (with per-claim receipts)
+Then STOP. Do not start anything new after the handoff."
+
+nohup bash -c '
+  REPO="$1"; PROMPT="$2"; LOG="$3"; HANDOFF="$4"; TIMEOUT_BIN="$5"; CLAUDE_MINI="$6"
+  cd "$REPO" || exit 1
+  # HARD TTL (runaway guard 2026-07-10): no headless MiniMax process outlives its budget.
+  TTL="${HAIKU_DISPATCH_TTL_S:-1500}"
+  "$TIMEOUT_BIN" --kill-after=30 "$TTL" "$CLAUDE_MINI" -p "$PROMPT" > "$LOG" 2>&1
+  RC=$?
+  if [ ! -s "$HANDOFF" ]; then
+    # fail-LOUD: worker died (guard block, auth, crash) without writing its handoff
+    {
+      echo "BLOCKED"
+      echo "worker exited rc=$RC without writing a handoff — see log tail below"
+      echo "---- log tail ----"
+      tail -20 "$LOG" 2>/dev/null
+    } > "$HANDOFF"
+  fi
+' _ "$REPO" "$FULL_PROMPT" "$LOG" "$HANDOFF" "$TIMEOUT_BIN" "$CLAUDE_MINI" >/dev/null 2>&1 &
+
+PID=$!
+echo "dispatched haiku slug=$SLUG pid=$PID (one bounded job, fresh context)"
+echo "  log:     $LOG"
+echo "  handoff: $HANDOFF  (poll: haiku-dispatch-status $SLUG — BLOCKED is always written on failure)"

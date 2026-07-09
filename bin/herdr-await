@@ -1,0 +1,84 @@
+#!/bin/bash
+# herdr-await — zero-token, event-driven completion for herdr panes and result files.
+# GQ-002 L2': replaces model-driven pane polling (measured ~12.8k poll calls ≈ ~4B tokens).
+#
+# Usage:
+#   herdr-await --pane <id|label> [--match 'PASS|FAIL'] [--status done|idle] \
+#               [--timeout-ms 3600000] [--notify <pane>] [--capture <file>] [--close]
+#   herdr-await --file <path> [--timeout-ms 3600000] [--notify <pane>]
+#
+# Blocks on herdr's own wait primitives (or a 2s stat loop for files) — no LLM in the loop.
+# On completion: captures evidence, optionally pokes a manager pane ONCE, optionally
+# closes the worker pane (fresh-agent-per-task law: reset the chat after a main task).
+set -euo pipefail
+WORKSPACE="${WORKSPACE:-${SISO_WORKSPACE:-$HOME/SISO_Workspace}}"
+HERDR="${HERDR_BIN:-$HOME/.local/bin/herdr}"
+EVDIR="$WORKSPACE/.agents/telemetry/events"
+mkdir -p "$EVDIR"
+
+PANE="" MATCH="" STATUS="" FILE="" TIMEOUT=3600000 NOTIFY="" CAPTURE="" CLOSE=0
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --pane) PANE="$2"; shift 2;;
+    --match) MATCH="$2"; shift 2;;
+    --status) STATUS="$2"; shift 2;;
+    --file) FILE="$2"; shift 2;;
+    --timeout-ms) TIMEOUT="$2"; shift 2;;
+    --notify) NOTIFY="$2"; shift 2;;
+    --capture) CAPTURE="$2"; shift 2;;
+    --close) CLOSE=1; shift;;
+    *) echo "herdr-await: unknown arg $1" >&2; exit 64;;
+  esac
+done
+[[ -n "$PANE" || -n "$FILE" ]] || { echo "herdr-await: need --pane or --file" >&2; exit 64; }
+
+resolve_pane() { # labels are durable, ids rotate — re-resolve fresh
+  local target="$1"
+  $HERDR pane list 2>/dev/null | python3 -c "
+import json,sys
+t='$1'
+d=json.load(sys.stdin)
+for p in d.get('result',{}).get('panes',[]):
+    if p.get('pane_id')==t or p.get('label')==t or p.get('terminal_id')==t:
+        print(p['pane_id']); sys.exit(0)
+sys.exit(3)"
+}
+
+TS() { date +%Y%m%dT%H%M%S; }
+SLUG="await-$(TS)-$$"
+RESULT="TIMEOUT"
+
+if [[ -n "$FILE" ]]; then
+  deadline=$(( $(date +%s) + TIMEOUT/1000 ))
+  while [[ $(date +%s) -lt $deadline ]]; do
+    [[ -s "$FILE" ]] && { RESULT="FILE-LANDED"; break; }
+    sleep 2
+  done
+  EVIDENCE="$( [[ -s "$FILE" ]] && head -c 2000 "$FILE" || echo '(no file)' )"
+else
+  PID="$(resolve_pane "$PANE")" || { echo "herdr-await: pane '$PANE' not found" >&2; exit 3; }
+  if [[ -n "$MATCH" ]]; then
+    if $HERDR wait output "$PID" --match "$MATCH" --regex --timeout "$TIMEOUT" >/dev/null 2>&1; then RESULT="MATCHED"; fi
+  else
+    if $HERDR wait agent-status "$PID" --status "${STATUS:-idle}" --timeout "$TIMEOUT" >/dev/null 2>&1; then RESULT="STATUS-${STATUS:-idle}"; fi
+  fi
+  PID="$(resolve_pane "$PANE" || echo "$PID")"   # re-resolve; ids rotate
+  EVIDENCE="$($HERDR pane read "$PID" --source recent --lines 30 2>/dev/null | tail -30 || echo '(unreadable)')"
+fi
+
+EVFILE="$EVDIR/$SLUG.txt"
+{ echo "when: $(date -Iseconds)"; echo "source: ${PANE:-$FILE}"; echo "result: $RESULT"; echo "---"; echo "$EVIDENCE"; } > "$EVFILE"
+[[ -n "$CAPTURE" ]] && cp "$EVFILE" "$CAPTURE"
+
+if [[ -n "$NOTIFY" ]]; then
+  NID="$(resolve_pane "$NOTIFY" || true)"
+  [[ -n "$NID" ]] && $HERDR pane run "$NID" "AWAIT-DONE ${PANE:-$FILE}: $RESULT — evidence: $EVFILE" >/dev/null 2>&1 || true
+fi
+
+if [[ "$CLOSE" == "1" && -n "$PANE" ]]; then
+  CID="$(resolve_pane "$PANE" || true)"   # re-resolve immediately before close (id-rotation scar)
+  [[ -n "$CID" ]] && $HERDR pane close "$CID" >/dev/null 2>&1 || true
+fi
+
+echo "$RESULT $EVFILE"
+[[ "$RESULT" != "TIMEOUT" ]]

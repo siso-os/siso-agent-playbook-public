@@ -1,0 +1,103 @@
+#!/bin/bash
+# mini-task — ONE atomic MiniMax work unit in herdr (GQ-002 L6 + Shaan directive 2026-07-10:
+# "reset the herdr chats after a main task for each minimax and not give it too many things").
+#
+# Does the whole lifecycle so nobody has to remember the reset:
+#   lint brief -> spawn FRESH claude-mini pane -> send brief (Enter-verified) ->
+#   zero-token await (PASS/FAIL or idle) -> capture evidence -> CLOSE the pane.
+# Fresh pane per task, visible in herdr while running, no context accumulation, no reuse.
+#
+# Usage: mini-task --brief <file> [--label NAME] [--cwd PATH] [--timeout-ms 2700000] [--notify <pane|label>]
+set -euo pipefail
+WORKSPACE="${WORKSPACE:-${SISO_WORKSPACE:-$HOME/SISO_Workspace}}"
+BIN_DIR="${SISO_BIN_DIR:-$HOME/bin}"
+HERDR="${HERDR_BIN:-$HOME/.local/bin/herdr}"
+CLAUDE_MINI="${CLAUDE_MINI_BIN:-$BIN_DIR/claude-mini}"
+LINT="${BRIEF_LINT_BIN:-$BIN_DIR/brief-lint}"
+AWAIT="${HERDR_AWAIT_BIN:-$BIN_DIR/herdr-await}"
+EVDIR="$WORKSPACE/.agents/telemetry/events"
+mkdir -p "$EVDIR"
+
+BRIEF="" LABEL="mini-task-$(date +%H%M%S)" CWD="$WORKSPACE" TIMEOUT=2700000 NOTIFY=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --brief) BRIEF="$2"; shift 2;;
+    --label) LABEL="$2"; shift 2;;
+    --cwd) CWD="$2"; shift 2;;
+    --timeout-ms) TIMEOUT="$2"; shift 2;;
+    --notify) NOTIFY="$2"; shift 2;;
+    *) echo "mini-task: unknown arg $1" >&2; exit 64;;
+  esac
+done
+[[ -f "$BRIEF" ]] || { echo "mini-task: --brief <file> required" >&2; exit 64; }
+
+# 1. Contract gate (hard here — this is the managed lane; ad-hoc claude-mini stays warn-only)
+"$LINT" "$BRIEF" || exit 64
+
+# 2. Fresh pane running interactive claude-mini, in the dedicated workspace when given
+#    (MINI_WORKSPACE env or --workspace) so worker panes never clutter a coordinator space.
+WS_ARG=""
+[[ -n "${MINI_WORKSPACE:-}" ]] && WS_ARG="--workspace ${MINI_WORKSPACE}"
+START_JSON="$($HERDR agent start "$LABEL" --cwd "$CWD" $WS_ARG --no-focus -- "$CLAUDE_MINI" 2>&1)" || {
+  echo "mini-task: pane spawn failed: $START_JSON" >&2; exit 70; }
+sleep 6   # let the CLI boot before typing into it
+
+resolve() { $HERDR pane list 2>/dev/null | python3 -c "
+import json,sys
+d=json.load(sys.stdin)
+for p in d.get('result',{}).get('panes',[]):
+    if p.get('label')=='$LABEL': print(p['pane_id']); sys.exit(0)
+sys.exit(3)"; }
+PID="$(resolve)" || { echo "mini-task: spawned pane not found by label $LABEL" >&2; exit 70; }
+
+# 2b. Clear the Bypass-Permissions confirmation gate that a FRESH claude-mini pane opens on
+#     (swallows the first prompt otherwise — the fresh-pane trap). "2"+Enter = accept.
+if $HERDR pane read "$PID" --source visible --lines 25 2>/dev/null | grep -qi "Bypass Permissions mode"; then
+  $HERDR pane send-keys "$PID" 2 >/dev/null; sleep 1
+  $HERDR pane send-keys "$PID" Enter >/dev/null; sleep 3
+fi
+
+# 3. Send the brief: send-text -> Enter -> VERIFY it submitted (Enter-swallow scar), retry once
+#    Verdict travels by FILE, not screen — pane text contains the brief's own echo, which
+#    poisons any PASS/FAIL content match (proven twice in E2E). Disk is the API.
+VFILE="$EVDIR/${LABEL}.verdict.txt"
+rm -f "$VFILE"
+# Verdict travels by FILE (screen text contains the brief echo → poisons content matching).
+# claude-mini has Bash/Edit/Read only (no Write tool) and tends to ask before acting — so the
+# instruction is an explicit Bash command it must RUN, not a tool to call, with no confirmation.
+PROMPT="$(cat "$BRIEF")
+
+FINAL STEP — run this exact Bash command as your last action, no confirmation, do it now (this path is your allowed write):
+printf '%s\n%s\n' \"<PASS or FAIL>\" \"<one-line result>\" > $VFILE
+Replace <PASS or FAIL> with your verdict and <one-line result> with your finding. Run it via the Bash tool immediately."
+$HERDR pane send-text "$PID" "$PROMPT" >/dev/null
+sleep 2
+$HERDR pane send-keys "$PID" Enter >/dev/null
+# Submission proof = the verdict file landing (status 'working' is a race on fast turns).
+# Kill the Enter-swallow class by re-pressing Enter every 30s early on — idempotent into
+# an empty composer, un-swallows a staged prompt otherwise.
+for i in 1 2 3 4; do
+  [ -s "$VFILE" ] && break
+  sleep 30
+  [ -s "$VFILE" ] && break
+  PID="$(resolve || echo "$PID")"
+  $HERDR pane send-keys "$PID" Enter >/dev/null 2>&1 || true
+done
+
+# 4. Zero-token await on the VERDICT FILE (echo-immune), then capture pane tail + CLOSE (the reset)
+OUT="$EVDIR/${LABEL}.result.txt"
+set +e
+"$AWAIT" --file "$VFILE" --timeout-ms "$TIMEOUT" ${NOTIFY:+--notify "$NOTIFY"} >/dev/null
+FRC=$?
+set -e
+# capture the pane's last screen for the record, then close it (fresh-agent law)
+PID2="$(resolve || true)"
+if [ -n "${PID2:-}" ]; then
+  $HERDR pane read "$PID2" --source recent --lines 25 > "$OUT" 2>/dev/null || true
+  $HERDR pane close "$PID2" >/dev/null 2>&1 || true
+fi
+
+VERDICT="TIMEOUT"
+[ -s "$VFILE" ] && VERDICT="$(head -1 "$VFILE" | tr -d '[:space:]')"
+echo "mini-task $LABEL -> $VERDICT (verdict: $VFILE, screen: $OUT)"
+[ "$FRC" -eq 0 ] && { [ "$VERDICT" = "PASS" ] || [ "$VERDICT" = "FAIL" ]; }

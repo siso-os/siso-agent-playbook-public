@@ -1,0 +1,68 @@
+#!/bin/bash
+# stack-check — the agent-layer's own invariant test (GQ-002, 2026-07-10).
+# First principles: doctrine DECAYS (GQ-001 Fable pass: enforcement score 71->54 in days).
+# So the stack's "knowing" is asserted mechanically, like a test suite for infrastructure:
+# every law must still be where agents will hit it. Run weekly (launchd) or on demand.
+# Exit 0 = all invariants hold; exit 1 = drift found (each failure names the repair).
+set -uo pipefail
+WORKSPACE="${WORKSPACE:-${SISO_WORKSPACE:-$HOME/SISO_Workspace}}"
+BIN_DIR="${SISO_BIN_DIR:-$HOME/bin}"
+SKILLS_DIR="${CLAUDE_SKILLS_DIR:-$HOME/.claude/skills}"
+BIFROST_DB="${BIFROST_DB:-$HOME/.config/bifrost/config.db}"
+FAIL=0
+ok(){ echo "PASS  $1"; }
+bad(){ echo "FAIL  $1  -> $2"; FAIL=1; }
+
+# 1. Dispatch tools exist, executable, syntax-clean (bash tools via bash -n, python via py_compile)
+for t in lane-health herdr-await mini-task mini-headless; do
+  if [ -x "$BIN_DIR/$t" ] && bash -n "$BIN_DIR/$t" 2>/dev/null; then ok "tool $t"
+  else bad "tool $t" "restore from git/memory: project_gq002_answered"; fi
+done
+if [ -x "$BIN_DIR/brief-lint" ] && python3 -m py_compile "$BIN_DIR/brief-lint" 2>/dev/null; then ok "tool brief-lint"
+else bad "tool brief-lint" "restore from git/memory: project_gq002_answered"; fi
+
+# 2. No poison templates in the skill layer — the drain phrase as a live INSTRUCTION
+#    (comment lines documenting the scar are fine; only non-comment occurrences count)
+HITS=$(grep -rn "fan it WIDE" "$SKILLS_DIR"/*/bin/ 2>/dev/null | grep -v ':[0-9]*:#' | wc -l | tr -d ' ')
+[ "$HITS" = "0" ] && ok "no live fan-it-WIDE instruction in skill bins" || bad "poison instruction returned ($HITS lines)" "grep -rn 'fan it WIDE' ~/.claude/skills/*/bin/ | grep -v ':#'"
+
+# 3. Skill symlinks resolve + load-bearing skills present
+for s in telemetry model-routing haiku-dispatch fan-out subagents; do
+  [ -f "$SKILLS_DIR/$s/SKILL.md" ] && ok "skill $s resolves" || bad "skill $s missing/broken symlink" "re-link the skill into $SKILLS_DIR"
+done
+
+# 4. Governance still configured (the drain guard) — budgets AND rate limits attached
+B=$(sqlite3 "$BIFROST_DB" "SELECT COUNT(*) FROM governance_budgets;" 2>/dev/null || echo 0)
+R=$(sqlite3 "$BIFROST_DB" "SELECT COUNT(*) FROM governance_rate_limits;" 2>/dev/null || echo 0)
+[ "${B:-0}" -ge 1 ] && [ "${R:-0}" -ge 1 ] && ok "bifrost governance rows (budgets=$B rate_limits=$R)" || bad "governance EMPTY (budgets=$B rl=$R)" "re-attach via PUT /api/governance/virtual-keys/<id> (see IMPLEMENTATION.html)"
+
+# 5. Heartbeat loaded + telemetry fresh (<25 min)
+launchctl list 2>/dev/null | grep -q com.siso.lane-health && ok "lane-health launchd loaded" || bad "lane-health launchd NOT loaded" "launchctl load ~/Library/LaunchAgents/com.siso.lane-health.plist"
+LH="$WORKSPACE/.agents/telemetry/LANE-HEALTH.json"
+if [ -f "$LH" ] && [ $(( $(date +%s) - $(stat -f %m "$LH") )) -lt 1500 ]; then ok "LANE-HEALTH.json fresh"
+else bad "LANE-HEALTH.json stale/missing" "run ~/bin/lane-health; check launchd err log"; fi
+
+# 6. claude-mini guards intact (oversized + recursive fan-out + contract nudge)
+G=$(grep -c "MINIMAX_ALLOW_RISKY\|brief-lint" "$BIN_DIR/claude-mini" 2>/dev/null || echo 0)
+[ "${G:-0}" -ge 3 ] && ok "claude-mini guards present" || bad "claude-mini guards thinned ($G markers)" "diff vs memory: drain guards + contract nudge"
+
+# 7. Telemetry home is present and writable (the shared operating surface)
+TDIR="$WORKSPACE/.agents/telemetry"
+if [ -d "$TDIR/events" ] && [ -d "$TDIR/logs" ] && [ -d "$TDIR/state" ] && [ -w "$TDIR" ]; then
+  ok "telemetry home writable"
+else
+  bad "telemetry home missing/unwritable" "re-run install.sh with WORKSPACE=$WORKSPACE"
+fi
+
+# 8. CLAUDE.md routing pointers still point at existing paths (prose layer only routes — but routes must not dangle)
+if [ ! -f "$WORKSPACE/CLAUDE.md" ]; then
+  ok "workspace CLAUDE.md not present (optional)"
+elif grep -q ".agents/telemetry/LANE-HEALTH.json" "$WORKSPACE/CLAUDE.md" 2>/dev/null; then
+  ok "workspace CLAUDE.md routes to telemetry"
+else
+  bad "workspace CLAUDE.md has no telemetry pointer" "add the instruments line to the sub-agent card"
+fi
+
+echo "----"
+[ "$FAIL" = "0" ] && echo "STACK-CHECK: ALL INVARIANTS HOLD" || echo "STACK-CHECK: DRIFT FOUND (repairs named above)"
+exit $FAIL

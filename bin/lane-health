@@ -1,0 +1,88 @@
+#!/bin/bash
+# lane-health — heartbeat for every model lane (GQ-002 L4'). Zombie-green killer:
+# the 2026-07-09/10 incidents (silent 401 lane-death; drain invisible to router) both
+# lacked exactly this. Runs every 10 min via launchd; writes machine state; pages on FLIP.
+# (bash 3.2 compatible — macOS system bash has no associative arrays)
+set -uo pipefail
+WORKSPACE="${WORKSPACE:-${SISO_WORKSPACE:-$HOME/SISO_Workspace}}"
+TDIR="$WORKSPACE/.agents/telemetry"
+OUT="$TDIR/LANE-HEALTH.json"
+LOG="$TDIR/LANE-HEALTH.log"
+mkdir -p "$TDIR"
+VK="${BIFROST_VIRTUAL_KEY:?set me}"
+
+# 1 bifrost process/health
+if curl -s -m 5 http://localhost:8080/health | grep -q '"status":"ok"'; then BIFROST=UP; else BIFROST=DOWN; fi
+
+# 2 haiku->MiniMax lane through bifrost (1-token real completion, ~free)
+R=$(curl -s -m 20 -X POST http://localhost:8080/anthropic/v1/messages -H "content-type: application/json" -H "x-api-key: $VK" -H "anthropic-version: 2023-06-01" -d '{"model":"claude-haiku-4-5-20251001","max_tokens":4,"messages":[{"role":"user","content":"ok"}]}' 2>/dev/null)
+if echo "$R" | grep -q '"type":"message"'; then HAIKU=UP
+elif echo "$R" | grep -qi 'rate limit\|budget'; then HAIKU=LIMITED
+elif echo "$R" | grep -qi 'authentication\|invalid api key'; then HAIKU=AUTH-DEAD
+else HAIKU=DOWN; fi
+
+# 3 direct MiniMax key (the claude-mini lane that bypasses bifrost)
+K=$(grep -h 'API_KEY\|AUTH_TOKEN' ~/.config/siso-secrets/minimax.env 2>/dev/null | head -1 | cut -d= -f2- | tr -d '"')
+if [ -n "$K" ]; then
+  R=$(curl -s -m 20 -X POST https://api.minimax.io/anthropic/v1/messages -H "content-type: application/json" -H "x-api-key: $K" -H "anthropic-version: 2023-06-01" -d '{"model":"MiniMax-M3","max_tokens":4,"messages":[{"role":"user","content":"ok"}]}' 2>/dev/null)
+  if echo "$R" | grep -q '"type":"message"'; then DIRECT=UP
+  elif echo "$R" | grep -qi 'rate limit'; then DIRECT=LIMITED
+  else DIRECT=DOWN; fi
+else DIRECT=NO-KEY; fi
+
+# 4 codex CLI presence (cheap; a real exec probe would spend the Codex account)
+command -v codex >/dev/null 2>&1 && CODEX=PRESENT || CODEX=MISSING
+
+# 5 mac-mini reachability + error-state siso services
+if MOUT=$(ssh -o RemoteCommand=none -o ConnectTimeout=6 -o BatchMode=yes mac-mini 'launchctl list | grep com.siso | awk "\$2!=0 && \$2!=\"-\" {print \$3\"(\"\$2\")\"}"' 2>/dev/null); then
+  MINI=UP
+  MINIBAD="$(echo "$MOUT" | tr '\n' ' ' | sed 's/ *$//')"
+else
+  MINI=DOWN; MINIBAD="unknown"
+fi
+
+# 5b REAPER (runaway guard 2026-07-10): kill headless MiniMax procs older than TTL.
+# MiniMax doctrine = short bounded jobs; anything past 45 min is a runaway (live specimen:
+# a 3h16m orphan found 07-10). Interactive panes are herdr-managed and excluded by --bare match.
+REAPED=""
+for RP in $(pgrep -f "claude --bare --model MiniMax" 2>/dev/null); do
+  AGE=$(ps -o etimes= -p "$RP" 2>/dev/null | tr -d ' ')
+  if [ -n "$AGE" ] && [ "$AGE" -gt "${MINI_REAP_TTL_S:-2700}" ]; then
+    kill "$RP" 2>/dev/null && REAPED="$REAPED $RP(${AGE}s)"
+  fi
+done
+[ -n "$REAPED" ] && echo "$(date -Iseconds) REAPED:$REAPED" >> "$LOG"
+
+# 6 bifrost budget headroom (governance)
+BUD=$(curl -s -m 5 http://localhost:8080/api/governance/virtual-keys 2>/dev/null | python3 -c "
+import json,sys
+try:
+  d=json.load(sys.stdin)
+  vk=d['virtual_keys'][0]; b=vk.get('budget') or {}; r=vk.get('rate_limit') or {}
+  print(f\"{b.get('current_usage',0)}/{b.get('max_limit','-')}usd {r.get('token_current_usage',0)}/{r.get('token_max_limit','-')}tok\")
+except Exception: print('unreadable')")
+
+NOW="$(date -Iseconds)"
+NEW=$(python3 -c "
+import json,sys
+print(json.dumps({
+ 'bifrost':'$BIFROST','haiku_minimax':'$HAIKU','minimax_direct':'$DIRECT',
+ 'codex_cli':'$CODEX','mini_ssh':'$MINI','mini_bad_services':'''$MINIBAD''',
+ 'minimax_budget':'''$BUD'''.strip()},sort_keys=True))")
+
+PREV="$( [ -f "$OUT" ] && python3 -c "import json;print(json.dumps(json.load(open('$OUT')).get('lanes',{}),sort_keys=True))" 2>/dev/null || echo '{}' )"
+printf '{"when":"%s","lanes":%s}\n' "$NOW" "$NEW" > "$OUT"
+
+# Page only on availability flips (budget counters change every run — excluded from flip detection)
+FLIP=$(python3 -c "
+import json
+a=json.loads('''$PREV''') if '''$PREV'''.strip() else {}
+b=json.loads('''$NEW''')
+keys=['bifrost','haiku_minimax','minimax_direct','codex_cli','mini_ssh']
+diff=[f'{k}: {a.get(k,\"?\")}->{b.get(k)}' for k in keys if a.get(k)!=b.get(k)]
+print('; '.join(diff))" 2>/dev/null || echo "")
+if [ -n "$FLIP" ] && [ "$PREV" != "{}" ]; then
+  echo "$NOW FLIP: $FLIP" >> "$LOG"
+  osascript -e "display notification \"$FLIP\" with title \"LANE-HEALTH flip\"" 2>/dev/null || true
+fi
+echo "$NOW $NEW"

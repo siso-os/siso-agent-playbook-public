@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# haiku-dispatch-status — poll haiku handoff files for DONE/BLOCKED
+set -euo pipefail
+DIR="$(pwd -P)/.orchestrate/handoffs"
+if [ "$#" -ge 1 ]; then
+  F="$DIR/$1.haiku.md"
+  [ -f "$F" ] && { echo "=== $1 ==="; cat "$F"; } || echo "$1: no handoff yet (still running — tail /tmp/haiku-$1.log)"
+else
+  for f in "$DIR"/*.haiku.md; do
+    [ -f "$f" ] || continue
+    slug=$(basename "$f" .haiku.md)
+    echo "$slug: $(head -1 "$f")"
+  done
+fi
