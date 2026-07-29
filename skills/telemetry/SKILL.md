@@ -22,7 +22,11 @@ One home: `$WORKSPACE/.agents/telemetry/` (`WORKSPACE` defaults to `~/SISO_Works
 3. **Re-run the rollup after a big campaign** and read the headline: did tokens-per-task move? This file is the standing regression test for every efficiency change (GQ-002 levers land as paired experiments against it).
 
 ## Budget facts (so a limit isn't misread as an outage)
-MiniMax Workers key (Bifrost governance, live 2026-07-10): **$25/day budget, 150M tokens/day, 25k req/day**. A `rate limit`/`budget` error mid-wave = the guardrail firing (check `minimax_budget` in LANE-HEALTH.json), not necessarily the plan being drained. The direct `claude-mini` lane bypasses Bifrost but is joined in the rollup + probed by lane-health.
+MiniMax Workers key (Bifrost governance, live 2026-07-10): **$25/day budget, 150M tokens/day, 25k req/day**. A `rate limit`/`budget` error mid-wave = the guardrail firing (check `minimax_5h_window` in LANE-HEALTH.json), not necessarily the plan being drained. The direct `claude-mini` lane bypasses Bifrost but is joined in the rollup + probed by lane-health.
 
 ## Extending
 New lane → add a probe block to `~/bin/lane-health` + a lane matcher in `bin/efficiency-rollup.py` (see its README.html). Keep one home; don't spawn parallel telemetry dirs.
+
+
+## minimax_5h_window (2026-07-20 — replaced the wrong token counter)
+The REAL MiniMax coding-plan usage: the **5-hour rolling window** percent (weekly is UNLIMITED on our plan). Source: `api.minimax.io/v1/coding_plan/remains` via `scripts/fleet/minimax-usage.sh`. Format: `99%-5h-left resets-265m ok`. **429s are per-minute RPM/TPM bursts, NOT this window** — high % + 429 = throttle concurrency for a minute, do NOT halt the fleet. The old `minimax_budget` token counter was meaningless (coding plan isn't token-billed).

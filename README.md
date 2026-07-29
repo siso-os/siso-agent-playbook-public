@@ -11,7 +11,7 @@ Born from a measured disaster-and-recovery arc (see `TIMELINE.html`): a 2.27B-to
 ## Quick Start
 
 ```bash
-git clone <this-repository-url> siso-agent-playbook
+git clone https://github.com/Lordsisodia/siso-agent-playbook.git
 cd siso-agent-playbook
 WORKSPACE="$HOME/SISO_Workspace" ./install.sh
 ```
@@ -21,6 +21,8 @@ symlinks the skills into `~/.claude/skills`, copies the command-line tools into 
 the workspace telemetry tree, and installs the 10-minute lane-health and weekly stack-check
 launch agents. It is safe to re-run; existing collisions are backed up and restored by
 `./uninstall.sh`.
+
+`MINIMAX_API_KEY` is optional and enables the direct MiniMax five-hour-window health probe. Keep it in local environment or in the generated secrets file; never commit it.
 
 For the complete machine in one page, read **[Architecture](docs/ARCHITECTURE.html)**.
 
@@ -55,3 +57,12 @@ For the complete machine in one page, read **[Architecture](docs/ARCHITECTURE.ht
 - To exercise installation without touching real home directories, use
   `PREFIX=/tmp/playbook-home WORKSPACE=/tmp/playbook-workspace ./install.sh`. A non-empty
   `PREFIX` also suppresses `launchctl` loading.
+
+## Great Library identity
+
+- Work: `gls:work:083503ab-c78e-4e07-ac40-ab9466dcedcc`
+- Section: Agents
+- Role: playbook layer of the Agents operating stack
+- Catalog: <https://great-library-of-siso.vercel.app/works/siso-agent-playbook/>
+
+Skills are atomic capabilities; this Playbook composes skills, tools, prompts, gates, and telemetry into repeatable operating scenarios. Both belong under Agents, but they retain different adoption and release lifecycles.

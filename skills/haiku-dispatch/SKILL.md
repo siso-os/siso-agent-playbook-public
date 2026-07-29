@@ -1,3 +1,8 @@
+---
+name: haiku-dispatch
+description: Dispatch one bounded read-heavy job to a fresh headless MiniMax worker with a fail-loud result handoff; use for classification, verification, mining, auditing, and extraction batches.
+---
+
 # haiku-dispatch
 
 Headless **MiniMax worker** for **read-heavy bounded** work (classify, verify, mine, audit, extract). Runs `claude-mini -p` (MiniMax M3 — ~unlimited, **$0 to the Opus/Claude plan**) as a background process: NO herdr pane, NO Opus-context pollution, and the process **exits when the job ends** (fresh context per task — nothing accumulates).

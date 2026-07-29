@@ -53,14 +53,25 @@ for RP in $(pgrep -f "claude --bare --model MiniMax" 2>/dev/null); do
 done
 [ -n "$REAPED" ] && echo "$(date -Iseconds) REAPED:$REAPED" >> "$LOG"
 
-# 6 bifrost budget headroom (governance)
-BUD=$(curl -s -m 5 http://localhost:8080/api/governance/virtual-keys 2>/dev/null | python3 -c "
+# 6 REAL MiniMax coding-plan usage — the 5-HOUR ROLLING WINDOW ONLY (weekly is UNLIMITED on our plan).
+# The AUTHORITATIVE source: api.minimax.io/v1/coding_plan/remains (2026-07-20). The old value pulled
+# Bifrost's local token-counter (token_current_usage/max) which is MEANINGLESS — the coding plan is NOT
+# token-billed, it's a 5h rolling window in PERCENT. current_interval_remaining_percent is the number that
+# matters. 429s = per-minute RPM/TPM burst, NOT this window — high % + 429 means throttle concurrency, don't halt.
+MMKEY="${MINIMAX_API_KEY:-}"
+if [ -n "$MMKEY" ]; then
+  BUD=$(curl -s -m 10 https://api.minimax.io/v1/coding_plan/remains -H "Authorization: Bearer $MMKEY" -H 'Content-Type: application/json' 2>/dev/null | python3 -c "
 import json,sys
 try:
   d=json.load(sys.stdin)
-  vk=d['virtual_keys'][0]; b=vk.get('budget') or {}; r=vk.get('rate_limit') or {}
-  print(f\"{b.get('current_usage',0)}/{b.get('max_limit','-')}usd {r.get('token_current_usage',0)}/{r.get('token_max_limit','-')}tok\")
+  if d.get('base_resp',{}).get('status_code') != 0: print('unreadable'); sys.exit()
+  g=next((m for m in d['model_remains'] if m['model_name']=='general'), d['model_remains'][0])
+  pct=g['current_interval_remaining_percent']; mins=g['remains_time']//60000; st='ok' if g['current_interval_status']==1 else 'limited'
+  print(f\"{pct}%-5h-left resets-{mins}m {st}\")
 except Exception: print('unreadable')")
+else
+  BUD="unconfigured"
+fi
 
 NOW="$(date -Iseconds)"
 NEW=$(python3 -c "
@@ -68,7 +79,7 @@ import json,sys
 print(json.dumps({
  'bifrost':'$BIFROST','haiku_minimax':'$HAIKU','minimax_direct':'$DIRECT',
  'codex_cli':'$CODEX','mini_ssh':'$MINI','mini_bad_services':'''$MINIBAD''',
- 'minimax_budget':'''$BUD'''.strip()},sort_keys=True))")
+ 'minimax_5h_window':'''$BUD'''.strip()},sort_keys=True))")
 
 PREV="$( [ -f "$OUT" ] && python3 -c "import json;print(json.dumps(json.load(open('$OUT')).get('lanes',{}),sort_keys=True))" 2>/dev/null || echo '{}' )"
 printf '{"when":"%s","lanes":%s}\n' "$NOW" "$NEW" > "$OUT"

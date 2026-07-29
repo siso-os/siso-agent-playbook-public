@@ -1,0 +1,9 @@
+{
+  "name": "siso-agent-playbook",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Repeatable multi-agent operating scenarios, skills, prompts, tools, gates, and telemetry.",
+  "scripts": {
+    "test": "python3 scripts/check.py"
+  }
+}

@@ -196,6 +196,8 @@ secrets_template="$STATE_DIR/secrets.template"
 cat > "$secrets_template" <<'EOF'
 # Required by lane-health. Replace the empty value locally; never commit this file.
 export BIFROST_VIRTUAL_KEY=''
+# Optional: enables lane-health's direct five-hour-window probe.
+export MINIMAX_API_KEY=''
 EOF
 if [ ! -e "$CONFIG_DIR/secrets.env" ]; then
   cp "$secrets_template" "$CONFIG_DIR/secrets.env"
