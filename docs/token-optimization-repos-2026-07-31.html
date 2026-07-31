@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Token-Optimization Repos — Digest 2026-07-31</title>
+<style>
+:root { color-scheme: light dark; }
+body { font: 15px/1.55 system-ui, -apple-system, Segoe UI, sans-serif; max-width: 1100px; margin: 2rem auto; padding: 0 1.25rem; color: #1a1a1a; background: #fafafa; }
+@media (prefers-color-scheme: dark) { body { color: #e6e6e6; background: #161616; } :root[data-theme="light"] { color: #1a1a1a; background: #fafafa; } }
+:root[data-theme="dark"]  { color: #e6e6e6; background: #161616; }
+h1 { font-size: 1.8rem; margin-bottom: 0.25rem; }
+h2 { font-size: 1.3rem; margin-top: 2.2rem; border-bottom: 1px solid currentColor; padding-bottom: 0.2rem; }
+h3 { font-size: 1.05rem; margin-top: 1.4rem; }
+.meta { color: #666; font-size: 0.9rem; margin-bottom: 1rem; }
+table { border-collapse: collapse; width: 100%; margin: 0.8rem 0; font-size: 0.92rem; }
+th, td { border: 1px solid #ccc; padding: 0.45rem 0.6rem; text-align: left; vertical-align: top; }
+@media (prefers-color-scheme: dark) { th, td { border-color: #444; } }
+th { background: #eee; }
+@media (prefers-color-scheme: dark) { th { background: #2a2a2a; } }
+tr:nth-child(even) td { background: rgba(0,0,0,0.03); }
+@media (prefers-color-scheme: dark) { tr:nth-child(even) td { background: rgba(255,255,255,0.04); } }
+code { background: rgba(127,127,127,0.18); padding: 1px 4px; border-radius: 3px; font-size: 0.88em; }
+.kv dt { font-weight: 600; color: #555; margin-top: 0.4rem; }
+.kv dd { margin: 0 0 0.4rem 0; }
+.receipt { font-size: 0.82rem; color: #777; font-family: ui-monospace, SF Mono, Menlo, monospace; word-break: break-all; }
+.tag { display: inline-block; padding: 1px 6px; border-radius: 10px; background: rgba(127,127,127,0.18); font-size: 0.78rem; margin-right: 4px; }
+.tag-claude { background: #d97757; color: #fff; }
+.tag-mcp { background: #7c4dff; color: #fff; }
+.tag-hook { background: #0288d1; color: #fff; }
+.tag-proxy { background: #43a047; color: #fff; }
+.tag-lib { background: #fb8c00; color: #fff; }
+.tag-rust { background: #8d6e63; color: #fff; }
+.unverified { color: #c62828; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<h1>Token-Optimization Repos — Digest</h1>
+<p class="meta">Date: 2026-07-31 · 8 repos fetched via <code>gh api</code> · 2 GitHub topic pages via WebFetch · all numeric claims carry receipts.</p>
+
+<h2>Summary table</h2>
+<table>
+<thead><tr><th>#</th><th>Repo</th><th>Mechanism</th><th>Claude Code?</th><th>Claimed savings</th><th>Stars</th><th>Last push</th></tr></thead>
+<tbody>
+<tr><td>1</td><td><a href="https://github.com/headroomlabs-ai/headroom">headroomlabs-ai/headroom</a></td><td>Library + HTTP proxy + MCP</td><td>Yes (wrap)</td><td>60–95% on JSON, 15–20% on coding agents</td><td>63,524</td><td>2026-07-31</td></tr>
+<tr><td>2</td><td><a href="https://github.com/rtk-ai/rtk">rtk-ai/rtk</a></td><td>CLI binary + bash-hook rewrite</td><td>Yes (<code>rtk init -g</code>)</td><td>up to 90% on bash output</td><td>74,142</td><td>2026-07-31</td></tr>
+<tr><td>3</td><td><a href="https://github.com/jgravelle/jcodemunch-mcp">jgravelle/jcodemunch-mcp</a></td><td>MCP server (tree-sitter AST index)</td><td>Yes</td><td>95%+ on code exploration, 99.6% benchmark avg</td><td>2,445</td><td>2026-07-31</td></tr>
+<tr><td>4</td><td><a href="https://github.com/yvgude/lean-ctx">yvgude/lean-ctx</a></td><td>Rust CLI + MCP + addon gateway</td><td>Yes</td><td>60–90% on reads &amp; shell</td><td>3,467</td><td>2026-07-31</td></tr>
+<tr><td>5</td><td><a href="https://github.com/cytostack/openwolf">cytostack/openwolf</a></td><td>Lifecycle hooks + project index</td><td>Yes (7 hooks)</td><td>Not numerical; targeted reads instead of whole-file</td><td>2,164</td><td>2026-07-15</td></tr>
+<tr><td>6</td><td><a href="https://github.com/getagentseal/codeburn">getagentseal/codeburn</a></td><td>Local log-reader + CLI/dashboard/MCP</td><td>Yes (guard hook opt-in)</td><td>Optimization (estimate savings per finding) — not compression itself</td><td>9,055</td><td>2026-07-30</td></tr>
+<tr><td>7</td><td><a href="https://github.com/claudioemmanuel/squeez">claudioemmanuel/squeez</a></td><td>Hook + filter pipeline + MCP server</td><td>Yes (Claude Code, Copilot, OpenCode, Gemini, Codex)</td><td>91.4% aggregate (40 scenarios); 83.5% under real BPE</td><td>177</td><td>2026-07-29</td></tr>
+<tr><td>8</td><td><a href="https://github.com/matt1398/claude-devtools">matt1398/claude-devtools</a></td><td>Local log reader / inspector (no proxy/hook)</td><td>Yes (Claude Code only)</td><td>N/A — observation tool, not a compressor</td><td>3,779</td><td>2026-05-13</td></tr>
+</tbody>
+</table>
+
+<h2>1. headroomlabs-ai/headroom</h2>
+<dl class="kv">
+<dt>What it does (one line)</dt><dd>Compresses everything an AI agent reads (tool outputs, logs, RAG chunks, files, conversation history) before it reaches the LLM, plus can trim model output.</dd>
+<dt>Mechanism</dt><dd>Library (<code>compress(messages)</code>), HTTP proxy (<code>headroom proxy --port 8787</code>), MCP server, and <code>headroom wrap &lt;tool&gt;</code> for Claude / Codex / Copilot / Cursor / Aider / etc.</dd>
+<dt>Token-saving technique</dt><dd>ContentRouter → SmartCrusher (JSON), CodeCompressor (AST), Kompress-v2-base (text model on HF) — CacheAligner warns about volatile cache-busting content. CCR (Content-Addressed Reversible) stores originals for retrieval. Output shaper appends terseness hint and dials <code>thinking.budget_tokens</code>/<code>reasoning_effort</code> down on routine turns.</dd>
+<dt>Claimed savings (workload)</dt>
+<dd>60–95% on JSON data, 15–20% on coding agents. Benchmark table (raw from README):</dd>
+</dl>
+<table>
+<thead><tr><th>Workload</th><th>Before</th><th>After</th><th>Savings</th></tr></thead>
+<tbody><tr><td>Code search (100 results)</td><td>17,765</td><td>1,408</td><td>92%</td></tr><tr><td>SRE incident debugging</td><td>65,694</td><td>5,118</td><td>92%</td></tr><tr><td>GitHub issue triage</td><td>54,174</td><td>14,761</td><td>73%</td></tr><tr><td>Codebase exploration</td><td>78,502</td><td>41,254</td><td>47%</td></tr></tbody>
+</table>
+<p>Accuracy: GSM8K 0.870→0.870 (Δ ±0), TruthfulQA 0.530→0.560 (+0.030), SQuAD v2 97% with 19% compression, BFCL 97% with 32% compression.</p>
+<p><strong>Claude Code?</strong> Yes — explicit <code>headroom wrap claude</code>, plus installs Serena for semantic nav.</p>
+<p><strong>Stars:</strong> 63,524. <strong>Last push:</strong> 2026-07-31.</p>
+<p class="receipt">Receipt — <code>gh api repos/headroomlabs-ai/headroom --jq '{stars: .stargazers_count, pushed: .pushed_at}'</code> → <code>{"archived":false,"desc":"Compress tool outputs, logs, files, and RAG chunks before they reach the LLM. 20% fewer tokens for coding agents, 60-95% fewer tokens for JSON, same answers. Library, proxy, MCP server.","name":"headroomlabs-ai/headroom","pushed":"2026-07-31T06:06:03Z","stars":63524}</code></p>
+
+<h2>2. rtk-ai/rtk</h2>
+<dl class="kv">
+<dt>What it does</dt><dd>Filters and compresses command output before it reaches the LLM context — single Rust binary, 100+ commands.</dd>
+<dt>Mechanism</dt><dd>Rust CLI binary that registers as a Claude Code / Codex / Cursor / Gemini / Cline / Pi / Kilocode / Hermes / Droid hook. The hook rewrites Bash commands (<code>git status</code> → <code>rtk git status</code>) before execution. Built-in tools like Read/Grep/Glob are NOT auto-rewritten — users must call <code>rtk read</code>/<code>rtk grep</code>/<code>rtk find</code> directly.</dd>
+<dt>Technique</dt><dd>Per-command smart filtering (noise removal), grouping (files by directory, errors by type), truncation, deduplication. Examples: <code>ls</code> → tree with counts, <code>git log</code> → hash+author+subject only, <code>pytest</code> → failures only with trimmed traceback.</dd>
+<dt>Claimed savings</dt><dd>"up to 90% of the bash output." RTK explicitly notes: bash output is one contributor to input tokens; reduction dilutes at every step. Percentages are bash-output-only, not whole-bill. Token estimates use <code>bytes / 4</code>.</dd></dl>
+<p><strong>Claude Code?</strong> Yes — <code>rtk init -g</code> installs Claude Code / Copilot hooks by default; explicit flags for Gemini (<code>--gemini</code>), Codex (<code>--codex</code>), Cursor (<code>--agent cursor</code>), Windsurf, Cline, Kilocode, Pi, Hermes, Droid.</p>
+<p><strong>Stars:</strong> 74,142. <strong>Last push:</strong> 2026-07-31.</p>
+<p class="receipt">Receipt — <code>gh api repos/rtk-ai/rtk --jq '{stars: .stargazers_count, pushed: .pushed_at}'</code> → <code>{"archived":false,"desc":"CLI proxy that reduces LLM token consumption by 60-90% on common dev commands. Single Rust binary, zero dependencies","name":"rtk-ai/rtk","pushed":"2026-07-31T09:17:04Z","stars":74142}</code></p>
+
+<h2>3. jgravelle/jcodemunch-mcp</h2>
+<dl class="kv">
+<dt>What it does</dt><dd>Indexes a repo once with tree-sitter AST, lets agents retrieve exact symbols (functions, classes, methods, constants, outlines, context bundles) instead of reading whole files.</dd>
+<dt>Mechanism</dt><dd>MCP server (<code>jcodemunch-mcp</code> via PyPI / <code>uvx</code>). The agent calls tools like <code>find_references</code> / <code>find_importers</code> / <code>get_blast_radius</code> / <code>get_class_hierarchy</code> / <code>find_dead_code</code>. MUNCH wire format adds a second compression axis (path interning, homogeneous-list CSV).</dd>
+<dt>Technique</dt><dd>Symbol-level retrieval (tree-sitter) replaces whole-file reads; structured byte-level precision. MUNCH wire format (v1.56.0) median 45.5% bytes saved across 6 tools, 55.4% peak on graph/outline. Cost is per-seat licensing (free for personal use, $79/Builder, $349/Studio, $1,999/Platform).</dd>
+<dt>Claimed savings</dt><dd>"95%+ lower code-reading token usage in many retrieval-heavy workflows." Telemetry claims: 583B+ tokens saved, 73,000+ devs, $2.9M+ spend avoided, 70,000+ kg CO₂ prevented. Live benchmark at jcodemunch.com: 99.6% avg token reduction (15 tasks / 3 repos, 99.9% peak; run 2026-07-23).</dd></dl>
+<p><strong>Claude Code?</strong> Yes — explicit "Claude Code" install button and <code>claude mcp add</code> flow.</p>
+<p><strong>Stars:</strong> 2,445. <strong>Last push:</strong> 2026-07-31.</p>
+<p class="receipt">Receipt — <code>gh api repos/jgravelle/jcodemunch-mcp --jq '{stars: .stargazers_count, pushed: .pushed_at}'</code> → <code>{"archived":false,"desc":"Cut AI token costs 95%+ on code exploration. The leading MCP server for precise, symbol-level GitHub code retrieval via tree-sitter AST. Works with Claude Code, Cursor & any MCP client. 313B+ tokens saved.","name":"jgravelle/jcodemunch-mcp","pushed":"2026-07-31T11:28:41Z","stars":2445}</code></p>
+
+<h2>4. yvgude/lean-ctx</h2>
+<dl class="kv">
+<dt>What it does</dt><dd>Context-engineering layer for AI coding agents: one local Rust binary that decides what agents read, compresses what they send, remembers what they learn, guards what they touch, and proves savings.</dd>
+<dt>Mechanism</dt><dd>Rust CLI (<code>lean-ctx</code> via cargo / npm / brew / AUR) + optional proxy + MCP server (76 tools) + addon gateway (wraps other MCP servers). Target-density compression. Tree-sitter AST across 27 languages.</dd>
+<dt>Technique</dt><dd>10 read modes (full / map / signatures / diff / lines:N-M / density:X / etc.) — cached re-reads cost ~13 tokens. 95+ shell-output patterns compress git / npm / cargo / docker / kubectl / terraform. Reversible by design (CCR): pruned payloads get content-addressed handles the model can pull back via <code>ctx_expand</code>, <code>ctx_retrieve</code>, or <code>GET /v1/references/{id}</code>. Property graph (imports/calls/exports/type_ref), session memory (CCP), knowledge graph with temporal validity.</dd>
+<dt>Claimed savings</dt><dd>60–90% on reads and shell output. Per README: repeated file reads ~2000→13 tokens, raw git status ~800→120. Signed savings ledger (<code>lean-ctx savings</code>), tamper-evident SHA-256 chain.</dd></dl>
+<p><strong>Claude Code?</strong> Yes — listed alongside Cursor, Copilot, Windsurf, Codex, Gemini and 30+ agents, "no config needed."</p>
+<p><strong>Stars:</strong> 3,467. <strong>Last push:</strong> 2026-07-31.</p>
+<p class="receipt">Receipt — <code>gh api repos/yvgude/lean-ctx --jq '{stars: .stargazers_count, pushed: .pushed_at}'</code> → <code>{"archived":false,"desc":"Control what your AI can see. LeanCTX (Lean Context) is the context intelligence layer for AI agents — one local Rust binary that decides what they read, remembers what they learn, guards what they touch, and proves what they save. 60–90% fewer tokens as the receipt. 76 MCP tools, 30+ agents, local-first.","name":"yvgude/lean-ctx","pushed":"2026-07-31T12:04:31Z","stars":3467}</code></p>
+
+<h2>5. cytostack/openwolf</h2>
+<dl class="kv">
+<dt>What it does</dt><dd>"Second brain" for AI coding assistants — context management, project anatomy scaffolding, and token-utilization tracking via 7 invisible lifecycle hooks.</dd>
+<dt>Mechanism</dt><dd>Node.js CLI (<code>npm install -g openwolf</code>) that wires lifecycle hooks for Claude Code (7 hooks + CLAUDE.md), Codex CLI (hooks.json + AGENTS.md), OpenCode (plugin + AGENTS.md), Cursor (.cursor/rules, beta), Antigravity (AGENTS.md), Gemini CLI (GEMINI.md, beta). Stores <code>.wolf/</code> brain in the project.</dd>
+<dt>Technique</dt><dd>Budget-capped session digest injected at SessionStart (current goals, mistakes, project map pointer). PreCompact hook snapshots in-flight state and re-injects files-already-modified. Durable <code>anatomy-index.json</code> with token estimates and top-level symbol line ranges for files &gt;500 tokens (TS/JS/Python/Go/Rust). Token ledger reads real harness transcripts at session end.</dd>
+<dt>Claimed savings</dt><dd>No headline %. README contrasts "without vs with": "Whole-file reads just to find one function" → "Symbol-level hints give exact line ranges for offset/limit reads." Repeated re-reads (~2000 tokens) become a 1-line description. Token usage measured from transcripts (so savings are empirical, not projected).</dd></dl>
+<p><strong>Claude Code?</strong> Yes — "Full (hooks + context)" support.</p>
+<p><strong>Stars:</strong> 2,164. <strong>Last push:</strong> 2026-07-15 (≈16 days stale).</p>
+<p class="receipt">Receipt — <code>gh api repos/cytostack/openwolf --jq '{stars: .stargazers_count, pushed: .pushed_at}'</code> → <code>{"archived":false,"desc":"Sharper context. Fewer tokens. Open-source middleware for Claude Code.","name":"cytostack/openwolf","pushed":"2026-07-15T00:12:01Z","stars":2164}</code></p>
+
+<h2>6. getagentseal/codeburn</h2>
+<dl class="kv">
+<dt>What it does</dt><dd>Local-first tracker for AI coding token usage and cost across 36 tools/agents, with optimize/apply/guard for fixing waste. NOT a compressor — an auditor + assistant.</dd>
+<dt>Mechanism</dt><dd>Node 22.13+ CLI (<code>npx codeburn</code>) + TUI dashboard + web dashboard + macOS menubar + desktop apps (macOS / Windows / Linux). Reads session files Claude / Codex / Cursor already write to disk — no wrapper, no proxy, no API keys. LiteLLM pricing refreshed daily. Optional guard hook (<code>codeburn guard install</code>) caps session cost in Claude Code.</dd>
+<dt>Technique</dt><dd>Parses existing session logs (Claude Code JSONL, Codex, Cursor SQLite via <code>better-sqlite3</code>, OpenCode, etc.) to attribute tokens/dollars by task, model, tool, project. <code>codeburn optimize</code> scans for waste patterns (re-read files, low Read:Edit ratio, uncapped BASH_MAX_OUTPUT_LENGTH, unused MCP servers, ghost skills, bloated CLAUDE.md, cache-creation overhead). <code>codeburn optimize --apply</code> changes settings/env/archives unused items; every change is journaled and reversible via <code>codeburn act undo</code>. Estimated savings vs realized savings reconciled after 3 days.</dd>
+<dt>Claimed savings</dt><dd>Not a compression claim. README example: "CodeBurn June 2026 — Totals Cost $2,795.10, Tokens 3.49B, Calls 14,755, Cache hit 99.3%". Findings are estimated with an urgency-weighted rank; realized-vs-estimated reported after the fact.</dd></dl>
+<p><strong>Claude Code?</strong> Yes — Claude Code is one of 36 supported tools; <code>codeburn guard install</code> adds optional hooks.</p>
+<p><strong>Stars:</strong> 9,055. <strong>Last push:</strong> 2026-07-30.</p>
+<p class="receipt">Receipt — <code>gh api repos/getagentseal/codeburn --jq '{stars: .stargazers_count, pushed: .pushed_at}'</code> → <code>{"archived":false,"desc":"Free, local tool to track AI coding token usage and cost across 36 tools and agents (Claude Code, Cursor, Codex, Gemini and more), by model, project, and task. npx codeburn","name":"getagentseal/codeburn","pushed":"2026-07-30T00:30:04Z","stars":9055}</code></p>
+
+<h2>7. claudioemmanuel/squeez</h2>
+<dl class="kv">
+<dt>What it does</dt><dd>End-to-end token optimizer for 7 AI CLI hosts — Claude Code, Copilot CLI, OpenCode, Gemini CLI, Codex CLI, Pi, Hermes. Hook-driven bash compression, cross-call dedup, session memory, MCP server.</dd>
+<dt>Mechanism</dt><dd>PreToolUse hook (filter pipeline: smart-filter → dedup → log-template → relevance-truncation), PostToolUse hook (token tracking), PostCompact hook (re-injects session state), SessionStart (memory + terse persona). Reversible compression: full output stashed content-addressed, model retrieves via <code>squeez_retrieve</code> MCP tool. Zero runtime deps (libc only on Unix).</dd>
+<dt>Technique</dt><dd>Log-template compaction (collapses near-identical log lines differing only by timestamps/IDs/values into "[×N] &lt;template&gt;"). Relevance-aware truncation keeps highest-relevance lines (error/signal words + terms from command). Exact-hash dedup + fuzzy trigram-shingle Jaccard ≥0.85 cross-call dedup. Identifier factsheet preserves exact git SHAs / UUIDs / ticket codes in every summary (deterministic, budget-capped). Net-win gate refuses to compress when savings &lt; 24 tokens. Adaptive intensity: Full (&lt;80% budget) → Ultra (≥80%). Caveman persona + ADHD focus mode for terse output.</dd>
+<dt>Claimed savings</dt><dd>91.4% aggregate across 40 scenarios (226,286 → 19,556 tokens). Verified with real BPE tokenizer: 83.5% (cl100k_base, 22 fixtures) — divergence from chars/4 estimate only 0.5 pts. Estimated cost: 91% savings at $3/MTok Sonnet 4.6 input (e.g. 100 calls/day $18→$1.56). Quality 40/40 signal-term preservation. Latency p50 3.9ms, p95 52ms.</dd></dl>
+<p><strong>Claude Code?</strong> Yes — full native hook support; other hosts via soft-instruction blocks (AGENTS.md, GEMINI.md) where PreToolUse isn't exposed.</p>
+<p><strong>Stars:</strong> 177. <strong>Last push:</strong> 2026-07-29.</p>
+<p class="receipt">Receipt — <code>gh api repos/claudioemmanuel/squeez --jq '{stars: .stargazers_count, pushed: .pushed_at}'</code> → <code>{"archived":false,"desc":"Hook-based token compressor for 5 AI CLI hosts (Claude Code, Copilot CLI, OpenCode, Gemini CLI, Codex CLI). Up to 95% bash compression, signature-mode for code reads, cross-call dedup, MCP server, self-teaching protocol. Zero runtime deps.","name":"claudioemmanuel/squeez","pushed":"2026-07-29T00:59:49Z","stars":177}</code></p>
+
+<h2>8. matt1398/claude-devtools</h2>
+<dl class="kv">
+<dt>What it does</dt><dd>Inspector / DevTools for Claude Code — reads session logs and reconstructs tool calls, subagent trees, token usage, thinking, project memory. NOT a compressor — a debugging UI.</dd>
+<dt>Mechanism</dt><dd>Electron desktop app + Docker standalone (port 3456) + native installers for macOS/Linux/Windows. Reads <code>~/.claude/</code> log files; zero outbound network calls. No wrapper, no proxy, no API keys.</dd>
+<dt>Technique</dt><dd>Reconstructs terminal-hidden detail: exact file paths, syntax-highlighted content with line numbers, regex pattern + matched lines, inline Edit diffs, per-turn token attribution across 7 categories (CLAUDE.md layers, skills, @-mentions, tool I/O, thinking, team overhead, user text). Subagent execution trees with token metrics, duration, cost. Compaction visualization. SSH remote session support.</dd>
+<dt>Claimed savings</dt><dd>None — observation tool, not compression. The implicit claim is "you stop wasting tokens because you see what you're paying for."</dd></dl>
+<p><strong>Claude Code?</strong> Yes — Claude Code is the only target. Other agents' logs aren't read.</p>
+<p><strong>Stars:</strong> 3,779. <strong>Last push:</strong> 2026-05-13 (≈2.5 months stale — oldest in the cohort).</p>
+<p class="receipt">Receipt — <code>gh api repos/matt1398/claude-devtools --jq '{stars: .stargazers_count, pushed: .pushed_at}'</code> → <code>{"archived":false,"desc":"The missing DevTools for Claude Code — inspect session logs, tool calls, token usage, subagents, and context window in a visual UI. Free, open source.","name":"matt1398/claude-devtools","pushed":"2026-05-13T21:40:54Z","stars":3779}</code></p>
+
+<h2>GitHub topic pages — top repos</h2>
+
+<h3><a href="https://github.com/topics/token-optimization">topics/token-optimization</a> (top 10)</h3>
+<table>
+<thead><tr><th>Repo</th><th>Description</th><th>Stars</th></tr></thead>
+<tbody>
+<tr><td>rtk-ai/rtk</td><td>CLI proxy that reduces LLM token consumption by 60-90% on common dev commands; single Rust binary</td><td>74.1k</td></tr>
+<tr><td>headroomlabs-ai/headroom</td><td>Compresses tool outputs, logs, files, RAG chunks before the model; library + proxy + MCP</td><td>63.5k</td></tr>
+<tr><td>yvgude/lean-ctx</td><td>Local Rust context-intelligence layer that governs what AI agents read/remember/touch</td><td>3.5k</td></tr>
+<tr><td>jgravelle/jcodemunch-mcp</td><td>MCP server for symbol-level GitHub code retrieval via tree-sitter AST</td><td>2.4k</td></tr>
+<tr><td>cytostack/openwolf</td><td>"Sharper context. Fewer tokens." Open-source middleware for Claude Code</td><td>2.2k</td></tr>
+<tr><td>alexgreensh/token-optimizer</td><td>Find the ghost tokens; fix them; survive compaction; avoid context quality decay</td><td>1.8k</td></tr>
+<tr><td>lucasrosati/claude-code-memory-setup</td><td>Persistent memory and codebase knowledge graphs for Claude Code using Obsidian plus Graphify</td><td>902</td></tr>
+<tr><td>ojuschugh1/sqz</td><td>Compress LLM context to save tokens and reduce costs</td><td>586</td></tr>
+<tr><td>zdk/lowfat</td><td>Slim command output; strips noise, saves tokens</td><td>563</td></tr>
+<tr><td>nadimtuhin/claude-token-optimizer</td><td>Optimize token usage for Claude API calls</td><td>538</td></tr>
+</tbody>
+</table>
+<p class="receipt">Receipt — WebFetch on <code>https://github.com/topics/token-optimization</code> with prompt "List top ~10 repos: owner/name, description, star count". The topic page surfaces repos in a deterministic order; first 10 returned above. (<code>gh api topics/token-optimization</code> 404s — GitHub deprecated the public topics REST endpoint.)</p>
+
+<h3><a href="https://github.com/topics/token-optimizer">topics/token-optimizer</a> (top 10)</h3>
+<table>
+<thead><tr><th>Repo</th><th>Description</th><th>Stars</th></tr></thead>
+<tbody>
+<tr><td>alexgreensh/token-optimizer</td><td>Locates and fixes "ghost tokens" to survive compaction and prevent context quality decay</td><td>1.8k</td></tr>
+<tr><td>claudioemmanuel/squeez</td><td>Hook-driven token compressor for 5 AI CLI hosts; "Up to 95% bash compression" and MCP server</td><td>177</td></tr>
+<tr><td>mischasigtermans/laravel-toon</td><td>Laravel TOON encoding for LLMs — "~50% fewer tokens than JSON"</td><td>146</td></tr>
+<tr><td>oanhduong/token-ninja</td><td>Routes deterministic shell commands locally; "zero LLM calls" at µs latency via MCP</td><td>38</td></tr>
+<tr><td>Supereldecoder/claude-opus48-context-packer</td><td>Dense context-window optimizer for Claude Opus 4.8 — trims codebase bloat, restructures dep trees</td><td>14</td></tr>
+<tr><td>NailShakurov/logzip</td><td>Rust log compressor with Python API; "40-60% token savings" for LLM analysis</td><td>12</td></tr>
+<tr><td>samibajwaisking/Token-Optimizer-Skill</td><td>Compression patterns and system prompts for "Maximum Claude output with minimum tokens"</td><td>5</td></tr>
+<tr><td>palpalani/astro-agent-optimized</td><td>Produces "agent-optimized output for Astro JS tools"</td><td>4</td></tr>
+<tr><td>aptratcn/agent-cost-guard</td><td>Tracks, budgets, and optimizes AI coding agent spending</td><td>1</td></tr>
+<tr><td>Mishit18/claude-code-doctor</td><td>Diagnoses, lints, and auto-fixes Claude Code setups; zero-dependency analysis engines, 45+ checks</td><td>1</td></tr>
+</tbody>
+</table>
+<p class="receipt">Receipt — WebFetch on <code>https://github.com/topics/token-optimizer</code>. First 10 listed in topic's default ranking.</p>
+
+<h2>TECHNIQUES WORTH STEALING</h2>
+<p>Distinct mechanisms seen across these 8 repos. Grouped by where in the pipeline they act.</p>
+
+<h3>A. Hook-layer command/output filtering (rtk, squeez, headroom, openwolf, lean-ctx)</h3>
+<ul>
+<li><strong>Per-command format rewrite</strong> (rtk): replace <code>git status</code> with <code>rtk git status</code>; let a domain-aware binary render compact output. Limited to Bash tool (Claude Code's Read/Grep/Glob bypass the hook).</li>
+<li><strong>Log-template compaction</strong> (squeez): collapse near-identical log lines differing only by timestamps/IDs/values into one "[×N] &lt;template&gt;" line.</li>
+<li><strong>Exact-hash + fuzzy trigram-shingle dedup</strong> (squeez): cross-call dedup within a 16-call window, Jaccard ≥0.85; survives whitespace/timestamp jitter that defeats exact-hash.</li>
+<li><strong>Relevance-aware truncation</strong> (squeez): keep highest-relevance lines (error/signal words + terms from the command itself) instead of blind head/tail.</li>
+<li><strong>Identifier factsheet</strong> (squeez): carry exact git SHAs, UUIDs, ticket codes through every summary so lossy summarization never silently loses a hash.</li>
+<li><strong>Net-win gate</strong> (squeez): refuse to apply compression when savings &lt; ~24 tokens — header cost makes it a net loss. Don't compress &gt;0% cases by force.</li>
+<li><strong>Adaptive intensity</strong> (squeez): Full mode (&lt;80% budget) → Ultra mode (≥80%) — calibrate compression aggressiveness to session pressure rather than always-on Ultra.</li>
+</ul>
+
+<h3>B. Reversible compression (headroom, lean-ctx, squeez)</h3>
+<ul>
+<li><strong>Content-addressed store (CCR / similar)</strong>: original bytes stashed in a CAS; compressed payload carries a handle; the LLM pulls the original back via a retrieve tool. Lets aggressive compression stay safe.</li>
+<li>Trade-off: every repo uses a different storage shape (headroom local CAS, lean-ctx content-addressed with deterministic handles + 5 recovery paths, squeez content-addressed blobs with TTL pruning). The pattern is consistent — the implementation isn't.</li>
+</ul>
+
+<h3>C. Retrieval instead of reading (jcodemunch-mcp, openwolf, lean-ctx)</h3>
+<ul>
+<li><strong>Tree-sitter AST indexing</strong> (jcodemunch-mcp): index once, retrieve exact symbols with byte-level offsets. Tools like <code>find_references</code>, <code>get_blast_radius</code>, <code>find_importers</code>, <code>find_dead_code</code> replace full file reads.</li>
+<li><strong>Symbol-level hints</strong> (openwolf): for files &gt;500 tokens, index top-level symbols with line ranges; agent fetches one function via offset/limit instead of the whole file.</li>
+<li><strong>10 read modes</strong> (lean-ctx): <code>full</code> / <code>map</code> / <code>signatures</code> / <code>diff</code> / <code>lines:N-M</code> / <code>density:X</code> — different fidelity per intent. Cached re-reads ~13 tokens.</li>
+</ul>
+
+<h3>D. Session / cross-chunk memory (lean-ctx, openwolf, squeez, headroom)</h3>
+<ul>
+<li><strong>PreCompact snapshot + PostCompact re-injection</strong> (openwolf, squeez, headroom): snapshot state before compaction, re-inject as <code>additionalContext</code> afterward. Concrete state (files modified, error snippets, retrievable blob ids) survives the wipe.</li>
+<li><strong>Temporal validity windows</strong> (lean-ctx knowledge graph): facts carry <code>valid_from</code>/<code>valid_to</code> so they expire or update on a schedule.</li>
+<li><strong>Cross-agent shared brain</strong> (headroom <code>wrap</code>, openwolf <code>.wolf/</code>): one store shared across Claude/Codex/Gemini/Grok with auto-dedup.</li>
+</ul>
+
+<h3>E. Output-token reduction (headroom, squeez, rtk warning)</h3>
+<ul>
+<li><strong>Verbosity steering</strong> (headroom): append a short "be terse, don't restate context" note at the end of the system prompt — keeps prompt cache hit intact.</li>
+<li><strong>Effort routing</strong> (headroom): when a turn is just the model resuming after a tool result (file read, passing test), dial <code>thinking.budget_tokens</code>/<code>reasoning_effort</code> down. New questions and errors keep full effort. Clamp-only, never zero.</li>
+<li><strong>Caveman persona</strong> (squeez): inject ultra-terse prompt at session start. <code>persona = off | lite | full | ultra</code>.</li>
+<li><strong>Counter-pattern warning</strong> (rtk issue #582 referenced in squeez README): aggressive command rewrite can INCREASE total cost by 18% because the model emits +50% more output tokens to compensate for stripped context. sques ships a guard against this regime. Don't strip input without watching the output.</li>
+</ul>
+
+<h3>F. Measurement &amp; accounting (headroom, lean-ctx, squeez, codeburn, claude-devtools)</h3>
+<ul>
+<li><strong>Cache-aware effective cost</strong> (squeez): list-price ratios (input ×1.0, cache write ×1.25, cache read ×0.1, output ×5) applied identically to both sides; never miscount the provider's caching discount as compression savings.</li>
+<li><strong>Real BPE verification</strong> (squeez): re-tokenize every fixture with <code>cl100k_base</code>; reported 0.5pt divergence from <code>chars/4</code> estimate (83.5% real vs 83.0% chars/4) — proves the char estimate isn't a token-model artifact.</li>
+<li><strong>Tamper-evident savings ledger</strong> (lean-ctx <code>ctx_proof</code>/<code>ctx_verify</code>, 4-layer verification + ed25519-signed time-machine snapshots).</li>
+<li><strong>Per-turn 7-category attribution</strong> (claude-devtools): CLAUDE.md (global/project/dir) / skills / @-mentioned files / tool I/O / thinking / team overhead / user text — tell the user what's consuming context.</li>
+<li><strong>Realized vs estimated</strong> (codeburn <code>codeburn act report</code>): once an applied fix is ≥3 days old, compare estimated savings vs actual sessions. Closes the estimate↔reality loop.</li>
+</ul>
+
+<h3>G. Discovery / guard / budget (codeburn, headroom)</h3>
+<ul>
+<li><strong>Waste-pattern scanner</strong> (codeburn <code>codeburn optimize</code>): re-read files, low Read:Edit ratio, uncapped BASH_MAX_OUTPUT_LENGTH, unused MCP servers, ghost skills, bloated CLAUDE.md, cache-creation overhead. Each finding has a ready-to-paste fix (CLAUDE.md line / env var / archive cmd).</li>
+<li><strong>Soft / hard / checkpoint caps</strong> (codeburn <code>codeburn guard install</code>): warn past $5, stop past $15, nudge past $3 if no edits/commits. Hooks fail open — broken guard never blocks a session.</li>
+<li><strong>CacheAligner warning</strong> (headroom): detects volatile content that would bust provider KV cache prefixes; warns but never rewrites the prompt.</li>
+</ul>
+
+<h3>H. Cross-tool surface (lean-ctx addon gateway, headroom wrap)</h3>
+<ul>
+<li><strong>Addon gateway</strong> (lean-ctx): wraps any MCP server in a tiny <code>lean-ctx-addon.toml</code> manifest; one command wires it into the gateway; addon output is scrubbed for secrets and tagged untrusted before reaching the model.</li>
+<li><strong>headroom wrap + unwrap</strong> (headroom): one command installs proxy + Serena + agent config for 13+ tools; reverses cleanly. <code>headroom wrap</code> hot-syncs runtime env to the running proxy (no restart, no dropped requests, no lost caches).</li>
+</ul>
+
+<h2>Failure modes &amp; caveats across the cohort</h2>
+<ul>
+<li><strong>Counts vs cost dilution</strong>: rtk is explicit — "60-90% on bash output" is NOT "60-90% on your bill." Bash output is one input-token contributor; output tokens dilute the win. Headroom splits 20% on coding agents vs 60-95% on JSON for the same reason.</li>
+<li><strong>Tokenizers are not equal</strong>: squeez verified 83.5% with real BPE (cl100k_base) vs 83.0% with chars/4. Most projects report chars/4 only — fine for comparison, not for forecasting dollars.</li>
+<li><strong>Output can inflate when input is stripped</strong>: rtk issue #582 documented a regression where aggressive rewrite INCREASED total cost by 18% (model emits +50% output to compensate). Any input compressor without output accounting is risky.</li>
+<li><strong>Cache-busting is the silent killer</strong>: provider prefix-caches can lose 100% hit rate when a single volatile line (timestamp, counter, request id) lands in a stable prefix. CacheAligner (headroom) is the only project that surfaces this directly.</li>
+<li><strong>Hook surface gaps</strong>: Codex CLI has <code>apply_patch</code> hooks but no <code>read_file</code>/<code>grep</code> hook surface (openai/codex#18491); Gemini CLI's <code>BeforeTool</code> schema is pending docs (google-gemini/gemini-cli#25629). Squeez falls back to soft hints in AGENTS.md / GEMINI.md; OpenWolf uses protocol blocks.</li>
+<li><strong>No hook covers Agent/Task return value</strong>: PostToolUse <code>updatedToolOutput</code> (Claude Code v2.1.119+) covers built-in Read/Grep/Glob/Monitor but NOT the Agent/Task result. All projects surface this limit.</li>
+<li><strong>Verification difficulty</strong>: most "X% saved" claims are self-reported, on the maintainer's fixtures, with their own tokenizer. Realized-vs-estimated loops (codeburn <code>act report</code>, squeez cache-aware accounting) are rare and worth more than headline percentages.</li>
+</ul>
+
+<hr />
+<p class="meta">Generated 2026-07-31. All receipts are raw command outputs from the same session. WebFetch topic-page star counts are surface-render values; GitHub's public <code>topics</code> REST endpoint 404s.</p>
+</body>
+</html>

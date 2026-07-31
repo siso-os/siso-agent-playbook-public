@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Skill Playbook Architecture — SISO Agent Playbook</title>
+<style>
+:root{--bg:#fbfbfc;--ink:#15181d;--dim:#5b6470;--line:#e0e4ea;--acc:#2f4f6f;--warn:#b4232b}
+@media(prefers-color-scheme:dark){:root{--bg:#0f1216;--ink:#e6eaef;--dim:#8b96a4;--line:#252c36;--acc:#8fb4d9;--warn:#ff6b73}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.62 ui-sans-serif,-apple-system,Segoe UI,sans-serif;padding:34px 22px 70px}
+main{max-width:860px;margin:0 auto}
+h1{font-size:27px;letter-spacing:-.02em;margin:0 0 6px;text-wrap:balance}
+h2{font-size:19px;margin:34px 0 10px;padding-bottom:6px;border-bottom:1px solid var(--line);text-wrap:balance}
+h3{font-size:16px;margin:22px 0 6px}
+p{margin:9px 0}
+code{font:13px ui-monospace,SFMono-Regular,monospace;background:color-mix(in srgb,var(--acc) 11%,transparent);padding:1px 5px;border-radius:4px}
+ul{margin:9px 0;padding-left:22px} li{margin:4px 0}
+hr{border:0;border-top:1px solid var(--line);margin:26px 0}
+.tw{overflow-x:auto;margin:12px 0}
+table{border-collapse:collapse;width:100%;min-width:460px;font-size:13.5px}
+th{text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--dim);padding:8px 10px;border-bottom:1px solid var(--line)}
+td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+strong{font-weight:650}
+</style></head><body><main>
+<h1>Skill Playbook Architecture</h1>
+<p><strong>Status:</strong> live as of 2026-07-31</p>
+<p><strong>Generator:</strong> <code>scripts/build-playbooks.mjs</code></p>
+<p><strong>Supersedes:</strong> <code>maps/SKILLS.html</code> as the routing layer (that map rotted — see &quot;Why the old map failed&quot;)</p>
+<hr>
+<h2>The problem this solves</h2>
+<p>Every Claude Code session injects <code>name + description</code> for every installed skill. Skill</p>
+<p><strong>bodies</strong> are already lazy — they load only on invocation — so the body size is free.</p>
+<p>The description is the only thing you pay for at startup, on every turn, forever.</p>
+<p>Two failures had compounded:</p>
+<ul>
+<li><strong>78 skills all paying full description cost.</strong> ~7,758 tokens uncapped.</li>
+<li><strong><code>skillListingMaxDescChars: 160</code> was severing trigger vocabulary.</strong> 60 of 78</li>
+</ul>
+<p>   descriptions exceeded the cap. These descriptions are written &quot;what it does&quot; first,</p>
+<p>   &quot;when to fire&quot; second — so the cap kept the <em>what</em> and cut the <em>when</em>.</p>
+<p>Measured damage from (2):</p>
+<div class="tw"><table><thead><tr><th>Skill</th><th>% of description lost</th><th>What was lost</th></tr></thead><tbody>
+<tr><td><code>task</code></td><td>86%</td><td>the entire scope description</td></tr>
+<tr><td><code>subagents</code></td><td>76%</td><td>the <code>AUTO-TRIGGER at the start of any multi-step task</code> clause</td></tr>
+<tr><td><code>herdr</code></td><td>64%</td><td>the hygiene laws and the &quot;where do I put this worker?&quot; trigger</td></tr>
+<tr><td><code>preflight-lessons</code></td><td>61%</td><td>the literal <code>AUTO-TRIGGER on:</code> list</td></tr>
+<tr><td><code>fan-out</code></td><td>59%</td><td>every trigger phrase: &#x27;for each&#x27;, &#x27;across all&#x27;, &#x27;check every&#x27;, &#x27;go through&#x27;</td></tr>
+<tr><td><code>prove-before-claim</code></td><td>58%</td><td>the sub-agent &quot;it worked&quot; acceptance trigger</td></tr>
+</tbody></table></div>
+<p><code>fan-out</code> is the tell: CLAUDE.md calls it the default reflex, and it had <strong>4 invocations</strong></p>
+<p>while its trigger list was being truncated away. Low usage was partly evidence of skills</p>
+<p>being <em>unfireable</em>, not unwanted.</p>
+<hr>
+<h2>The architecture</h2>
+<p><strong>Tier 1 — visible, rich, uncapped descriptions.</strong> ~13 entries.</p>
+<ul>
+<li><strong>6 playbook routers</strong> (<code>pb-research</code>, <code>pb-orchestration</code>, <code>pb-codenav</code>,</li>
+</ul>
+<p>  <code>pb-verification</code>, <code>pb-frontend</code>, <code>pb-system</code>). Each description carries the cluster&#x27;s</p>
+<p>  &quot;use when&quot;, its trigger vocabulary, and the list of skills it routes to.</p>
+<ul>
+<li><strong>7 auto-firing reflexes</strong> (<code>lesson</code>, <code>ponytail</code>, <code>reflect</code>, <code>classify-by-reading</code>,</li>
+</ul>
+<p>  <code>prove-before-claim</code>, <code>preflight-lessons</code>, <code>fan-out</code>). These must fire <em>unprompted</em>, so</p>
+<p>  they keep their complete descriptions including all trigger phrases. <strong>Never demote these.</strong></p>
+<p><strong>Tier 2 — bare name in the listing.</strong> ~45 skills with <code>description: &quot;&quot;</code>.</p>
+<p>Still fully invocable by name. The harness renders an empty-description skill as a bare</p>
+<p>name (~15–20 chars) instead of ~400. Verified empirically 2026-07-31: a probe skill with</p>
+<p><code>description: &quot;&quot;</code> loaded its body normally on invocation and appeared in the listing as a</p>
+<p>bare name.</p>
+<p><strong>The flow:</strong> agent hits a task → a tier-1 description matches → invokes the playbook →</p>
+<p>the <em>body</em> loads (free until this moment) carrying the cluster table and disambiguation →</p>
+<p>the body names the tier-2 skill → agent invokes that → its body loads. Three hops, each</p>
+<p>paid only when relevant.</p>
+<hr>
+<h2>Why the old map failed</h2>
+<p><code>maps/SKILLS.html</code> was the same idea, hand-maintained, and it rotted:</p>
+<ul>
+<li>It listed skills that no longer exist on disk: <code>dispatch</code>, <code>daytona</code>, <code>impeccable</code>,</li>
+</ul>
+<p>  <code>dogfood</code>, <code>ai-slop-cleaner</code>, <code>capability-router</code>, <code>siso-fleet-peer</code>, <code>convex-*</code> (×6).</p>
+<ul>
+<li>It listed as live many skills now marked <code>status: retired</code>: <code>websearch</code>, <code>xsearch</code>,</li>
+</ul>
+<p>  <code>gitsearch</code>, <code>brain</code>, <code>os-database</code>, <code>checkmark</code>.</p>
+<ul>
+<li><strong>Nothing loaded it.</strong> It was not injected and not referenced from the catalog, so no</li>
+</ul>
+<p>  agent ever routed through it and nothing surfaced the drift.</p>
+<p><strong>The fix is structural, not editorial:</strong> the playbooks are <em>generated from the filesystem</em></p>
+<p>on every run. A cluster member that no longer exists, or that has been retired, is dropped</p>
+<p>at build time with a warning. Drift is impossible because nothing is hand-maintained.</p>
+<p>Do not hand-edit <code>pb-*/SKILL.md</code>. Edit the <code>CLUSTERS</code> table in the generator and re-run.</p>
+<hr>
+<h2>Retired skills</h2>
+<p>27 of 79 skills on disk carry <code>status: retired</code> in their own frontmatter, and **all 27 have</p>
+<p>zero recorded invocations** — a perfect correlation. They are excluded from all clusters.</p>
+<p>They were not deleted: only 4 carried a supersession note, so the rest were retired</p>
+<p>silently and the files are kept for archaeology.</p>
+<p>Notable: all 7 <code>firecrawl-*</code> micro-skills are retired (the parent <code>firecrawl</code> documents the</p>
+<p>full ladder); <code>skill</code> is retired because its scope is the banned oh-my-claudecode; <code>os-database</code></p>
+<p>is superseded by <code>/task</code>.</p>
+<hr>
+<h2>Known defects in live skills (flagged, not fixed)</h2>
+<ul>
+<li><strong><code>codex-companion</code> hardcodes <code>gpt-5.5</code></strong> at lines 32, 41, 67 — including the launch</li>
+</ul>
+<p>  command <code>herdr pane run &quot;$COMP&quot; &quot;codex -m gpt-5.5 ...&quot;</code>. <code>model-routing</code> retired GPT-5.5</p>
+<p>  on 2026-07-11 in favour of <code>gpt-5.6-sol</code>. This skill will misroute. It also references</p>
+<p>  <code>codex-fast</code>, which <code>orchestration-playbook</code> marks RETIRED.</p>
+<ul>
+<li><strong><code>firecrawl</code> backend is missing</strong> — the binary is not on PATH and no API key is set,</li>
+</ul>
+<p>  as of 2026-07-31. The skill has 10 invocations against a tool that may not run.</p>
+<ul>
+<li><strong><code>model-routing</code> references GPT-5.5</strong> in its own description.</li>
+</ul>
+<hr>
+<h2>Operating rules</h2>
+<ul>
+<li><strong>Never demote a reflex.</strong> If a skill must fire without being asked for, it stays tier 1</li>
+</ul>
+<p>   with its full trigger vocabulary. Demoting it silences it.</p>
+<ul>
+<li><strong><code>skillListingMaxDescChars</code> must be ≥ 400</strong>, or the tier-1 descriptions get severed and</li>
+</ul>
+<p>   the whole design inverts back into the original problem.</p>
+<ul>
+<li><strong>Re-run the generator after adding, retiring, or renaming any skill.</strong></li>
+</ul>
+<p>   <code>node scripts/build-playbooks.mjs</code> (dry run) → <code>--apply</code>.</p>
+<ul>
+<li><strong>A playbook body is a router, not a runbook.</strong> It says <em>which</em> skill and <em>why that one</em> —</li>
+</ul>
+<p>   it never inlines the skill&#x27;s instructions, or the laziness is lost.</p>
+<ul>
+<li><strong>Measure firing, not just cost.</strong> <code>skill-events-hook.mjs</code> (PostToolUse) and</li>
+</ul>
+<p>   <code>skill-events-ingest.py</code> (SessionEnd) log invocations. The success metric is whether</p>
+<p>   tier-2 skills get <em>reached through playbooks</em>, not whether the catalog got smaller.</p>
+<hr>
+<h2>Verification history</h2>
+<div class="tw"><table><thead><tr><th>Claim</th><th>How it was verified</th></tr></thead><tbody>
+<tr><td>Bodies are lazy, only descriptions cost</td><td>Summed all bodies: 1,012,438 ch ≈ 253k tokens, none of which is charged</td></tr>
+<tr><td>Empty description keeps a skill invocable</td><td>Probe skill returned <code>PROBE-EMPTY-BODY-LOADED</code> when invoked</td></tr>
+<tr><td>Empty description collapses to a bare name</td><td>Read the raw injected listing bytes from session JSONL</td></tr>
+<tr><td>27 skills retired, all with 0 uses</td><td>Parsed <code>status:</code> from every SKILL.md; cross-referenced invocation counts from transcripts</td></tr>
+<tr><td>The 160-char cap severs triggers</td><td>Diffed each description at the 160-char boundary</td></tr>
+</tbody></table></div>
+
+<h2>Session 2026-07-31 — measured findings that drove the tooling</h2>
+<p><strong>The headline:</strong> a session's cost is <em>turns × accumulated context</em>, not the size of what
+each turn adds. Session <code>bf3518f3</code> billed <strong>129,714,069</strong> effective input tokens across
+431 turns while creating only <strong>169,070</strong> tokens of new content — a <strong>767× carry ratio</strong>.
+Context climbed 89,890 → 453,323. Median turn-to-turn growth: <strong>380 tokens</strong>.</p>
+<div class="tw"><table>
+<thead><tr><th>Session</th><th>Effective in</th><th>Cache-weighted</th><th>Turns</th><th>Context start→end</th><th>Carry</th></tr></thead>
+<tbody>
+<tr><td>bf3518f3</td><td>129,714,069</td><td>16,985,390</td><td>431</td><td>89,890 → 453,323</td><td>767×</td></tr>
+<tr><td>6b53a318</td><td>87,039,211</td><td>12,668,534</td><td>399</td><td>74,531 → 331,284</td><td>671×</td></tr>
+<tr><td>d6c55172</td><td>56,724,172</td><td>7,029,323</td><td>317</td><td>90,054 → 266,980</td><td>721×</td></tr>
+<tr><td>6cbcce02</td><td>33,391,438</td><td>5,531,381</td><td>173</td><td>79,707 → 342,010</td><td>222×</td></tr>
+</tbody></table></div>
+<p><strong>Content attribution</strong> (bf3518f3, one-time cost of everything ever added):
+tool_results 37.8%, tool_call_args 26.2%, assistant_prose 23.0%, user_text 13.0%.
+All of it totals 169k — roughly <strong>0.1%</strong> of the bill. No category is the problem; the turn count is.</p>
+<p><strong>The counter-pattern that makes compression a trap.</strong> Stripping input drives the model to emit
+~50% more output to compensate, and output bills ~5× input (rtk issue #582; <code>squeez</code> ships an explicit
+guard). Cache-aware weights — input ×1.0, cache-write ×1.25, cache-read ×0.1, output ×5 — are mandatory when
+measuring, or the provider's cache discount gets miscredited to your own change. Measured cache hit rate here
+was <strong>98.2%</strong>.</p>
+<h3>What was built from this</h3>
+<ul>
+<li><code>scripts/ctx-attribute.mjs</code> — read-only per-session attribution over Claude Code JSONL. Separates
+one-time content cost from re-billed carry. No proxy, no hook, nothing in the request path.</li>
+<li><code>~/.claude/hooks/context-depth-guard.mjs</code> — PreToolUse advisory at 150k / 250k / 350k context.
+Non-blocking, once per band per session, fail-open. Verified firing on a live 346k session.</li>
+<li><code>~/.claude/hooks/postcompact-reinject.mjs</code> — SessionStart(source=compact) hook that restores the
+PreCompact checkpoint. Closes a real gap: the checkpoint was being written and never read back. Capped at 1,500
+chars because anything re-injected is re-billed every subsequent turn.</li>
+<li><code>~/.claude/hooks/serena-nudge.mjs</code> — urges Serena over grep for code search only; silent on logs,
+JSONL, pipes, config. 13/13 unit cases plus a live end-to-end probe.</li>
+</ul>
+<p>Full repo research with receipts: <code>docs/token-optimization-repos-2026-07-31.html</code>.</p>
+
+</main></body></html>
