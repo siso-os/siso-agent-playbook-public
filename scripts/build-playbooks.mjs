@@ -134,7 +134,7 @@ const CLUSTERS = [
     members: [
       // The four code-search skills are ordered by SCOPE — local tree, then one repo, then all public code.
       // Pick by WHERE the code lives, not by which tool you know. They do not overlap if you read this order.
-      ['unified-code-search', 'YOUR working tree. Auto-picks rg / fd / ast-grep / ctags by query shape. Prefer Serena MCP first for symbols (find_symbol, find_referencing_symbols) — it returns structure, not matching lines.'],
+      ['unified-code-search', 'LOCAL ONLY — your working tree, nothing remote. Auto-picks rg / fd / ast-grep / ctags by query shape. Prefer Serena MCP first for symbols (find_symbol, find_referencing_symbols) — it returns structure, not matching lines. For anything across OTHER people\u2019s repos or GitHub-wide, this is the WRONG tool: use /code-search-campaign (in pb-research).'],
       ['source-reference', "ONE known dependency you need to read properly. Fetches the package's or repo's REAL source into the workspace so you read actual code instead of guessing at an API. Use when you know WHICH library."],
       ['gitsearch', 'ONE quick `gh search` for repos / code / issues / PRs. Thin wrapper, fastest path when you just need a few examples. gh is installed and authenticated. For anything broader, use sourcegraph instead — gh search rate-limits and misses code-pattern detail.'],
       ['sourcegraph', 'ALL public code across GitHub/GitLab/Bitbucket, plus NPM package metadata. The wide net for ecosystem discovery and cross-repo patterns. Slower than gitsearch but far more thorough — use when one repo will not answer it.'],
