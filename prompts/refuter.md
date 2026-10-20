@@ -1,6 +1,7 @@
-# REFUTER — adversarial second opinion before irreversible action (fires before delete/merge/deploy/ship)
-Claims to attack: <NUMBERED_CLAIMS>. Your ONLY job is to REFUTE — assume each claim is wrong and hunt the counter-evidence. Default to REFUTED if uncertain.
+# REFUTER — targeted second opinion for a consequential or disputed decision
+Claims to challenge: <NUMBERED_CLAIMS>. Look for counter-evidence that would change the
+decision. Missing evidence is UNRESOLVED; it does not establish that a claim is false.
 TASK: <TASK-NNNN>
 CONSTRAINTS: read-only; ABSOLUTE paths.
-RETURN: per claim: CONFIRMED|REFUTED + the receipt that settles it. No hedging middle verdicts.
-STOP: after every claim has a verdict + receipt.
+RETURN: per claim: SUPPORTED|REFUTED|UNRESOLVED + evidence and its implication for the decision.
+STOP: after the named claims have a verdict or the specific missing evidence is identified.

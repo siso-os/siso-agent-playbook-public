@@ -33,6 +33,24 @@ for skill in skills:
     assert re.search(r"^name:\s*\S+", text, re.MULTILINE), f"missing name: {skill}"
     assert re.search(r"^description:\s*.+", text, re.MULTILINE), f"missing description: {skill}"
 
+route_names = ("model-routing", "subagents", "fan-out", "haiku-dispatch")
+routing_text = "\n".join((ROOT / "skills" / name / "SKILL.md").read_text() for name in route_names)
+for retired_recipe in (
+    r"model\s*:\s*['\"]?(?:opus|sonnet|terra|fable)",
+    r"gpt-5\.[45]",
+    r"MINI_ENGINE\s*=\s*pi",
+    r"(?:^|[\s/])mini-pi(?:\s|$)",
+    r"mini-task",
+    r"minimax_(?:explorer|worker)",
+):
+    assert not re.search(retired_recipe, routing_text, re.IGNORECASE | re.MULTILINE), (
+        f"retired executable route in distributable routing skills: {retired_recipe}"
+    )
+assert "model: haiku" in routing_text, "approved Haiku transport is undocumented"
+assert re.search(r"\bLuna\b", routing_text), "approved Luna lane is undocumented"
+assert re.search(r"\bSol\b", routing_text), "approved Sol review lane is undocumented"
+assert "approved" in routing_text.lower() and "haiku" in routing_text.lower(), "Haiku transport boundary is undocumented"
+
 with tempfile.TemporaryDirectory(prefix="siso-agent-playbook-check-") as directory:
     root = Path(directory)
     env = dict(os.environ)
@@ -40,6 +58,7 @@ with tempfile.TemporaryDirectory(prefix="siso-agent-playbook-check-") as directo
     env["WORKSPACE"] = str(root / "workspace")
     run(["bash", "install.sh"], env=env, stdout=subprocess.DEVNULL)
     assert (root / "home" / ".claude" / "skills" / "subagents").is_symlink()
+    assert (root / "home" / ".claude" / "skills" / "haiku-dispatch").is_symlink()
     assert (root / "home" / "bin" / "lane-health").is_file()
     run(["bash", "uninstall.sh"], env=env, stdout=subprocess.DEVNULL)
 

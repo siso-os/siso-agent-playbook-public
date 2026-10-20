@@ -1,56 +1,26 @@
 #!/usr/bin/env node
-// build-playbooks.mjs — generate the two-tier skill catalog from what is ACTUALLY on disk.
+// Generate optional scenario routers from the live skill inventory.
+// Skill descriptions remain owned by their source; this generator never empties them.
+// Use a known capability directly. Routers help only when the right capability is unclear.
 //
-// WHY THIS EXISTS
-//   maps/SKILLS.html was a hand-maintained router. It rotted: it listed a dozen skills
-//   that no longer exist (dispatch, daytona, impeccable, convex-*) and listed retired
-//   ones as live. Nothing loaded it, so nothing caught the drift. This script rebuilds
-//   the routing layer from the filesystem every run, so drift is impossible.
-//
-// THE ARCHITECTURE (verified 2026-07-31, see CHANGELOG)
-//   Skill BODIES are already lazy — only `name + description` is injected at startup.
-//   So the only lever on catalog cost is the description field. Two tiers:
-//
-//   TIER 1 (visible, rich descriptions — full trigger vocabulary, NOT truncated):
-//     · the playbook routers (one per cluster)
-//     · the auto-firing reflexes, which must fire UNPROMPTED and therefore must keep
-//       their full "AUTO-TRIGGER on: ..." trigger phrases
-//   TIER 2 (bare name in the listing, description emptied):
-//     · everything invoked deliberately. Still fully invocable by name — verified:
-//       an empty-description skill loads its body normally. The harness renders it
-//       as a bare name, costing ~name length instead of ~400 chars.
-//
-//   An agent hits a task -> a tier-1 description matches -> it invokes the playbook ->
-//   the BODY loads (free until now) carrying the cluster table -> the body names the
-//   tier-2 skill to load next. Three hops, each paid only when relevant.
-//
-// USAGE
-//   node build-playbooks.mjs            # dry run — prints the plan, writes nothing
-//   node build-playbooks.mjs --apply    # write playbook SKILL.md files + empty tier-2 descs
-//
-// SAFETY
-//   · Never deletes a skill. Tier-2 demotion only empties `description:` in frontmatter.
-//   · Backs up every file it edits to <file>.bak-playbooks-<timestamp>.
-//   · Skips any skill whose frontmatter says `status: retired` (those are excluded
-//     from the catalog entirely — they were already decommissioned by their authors).
+// node build-playbooks.mjs          # inspect the routing plan
+// node build-playbooks.mjs --apply  # update changed generated routers, with backups
+// Retired skills are excluded. Source skills and their metadata are read-only.
 
 import { readFileSync, writeFileSync, readdirSync, existsSync, mkdirSync, copyFileSync } from 'fs';
 import { join } from 'path';
 import { homedir } from 'os';
 
-const HOME = homedir();
+const userDirectory = homedir();
 const ROOTS = [
-  join(HOME, 'SISO_Workspace/SISO_Agent_Base/templates/profile/skills'),
-  join(HOME, '.claude/skills'),
+  join(userDirectory, 'SISO_Workspace/SISO_Agent_Base/templates/profile/skills'),
+  join(userDirectory, '.claude/skills'),
 ];
 const APPLY = process.argv.includes('--apply');
 const STAMP = new Date().toISOString().replace(/[:.]/g, '').slice(0, 15);
 
 // ─────────────────────────────────────────────────────────────────────────────
-// TIER 1: reflexes that MUST keep full descriptions.
-// These fire unprompted. Emptying their description silences the doctrine —
-// measured: fan-out had only 4 invocations while its trigger-phrase list was
-// being severed by the 160-char cap.
+// Standalone capabilities that remain discoverable without a scenario router.
 // ─────────────────────────────────────────────────────────────────────────────
 const REFLEXES = new Set([
   'lesson', 'ponytail', 'reflect', 'classify-by-reading',
@@ -105,14 +75,12 @@ const CLUSTERS = [
       // Ordered by SCALE — one worker, then a session, then a whole project. The overlap between
       // fan-out / conduct / orchestrate is real; it is resolved by how LONG the work lives.
       ['subagents', 'THE routing table: which engine for which job, compact-return prompting, when NOT to delegate. Read this first — it decides everything below.'],
-      ['model-routing', 'Benchmark-calibrated capability matrix for the fleet. NOTE: references GPT-5.5 — superseded by gpt-5.6-sol.'],
+      ['model-routing', 'Current Luna-native and Haiku-transport policy.'],
       ['herdr', 'Pane mechanics — spawn, address, read peers, hygiene laws, the send-verify-Enter pattern.'],
       ['agent-comms', 'How any agent (including weak workers) talks to peers and actually gets the message submitted.'],
       ['conduct', 'ONE SESSION run as a fleet: recon, decompose, dispatch, converge, verify. The step up from fan-out when the work needs several waves and a synthesis rung — but still ends when the session does.'],
-      ['orchestrate', 'A WHOLE PROJECT outliving the session: one Opus driving persistent herdr panes with a task list and status contracts. Use when workers must survive a restart.'],
-      ['pi-dispatch', 'Lean headless MiniMax lane for bulk read/classify/verify jobs — far cheaper input tokens.'],
-      ['haiku-dispatch', 'Headless MiniMax worker for read-heavy bounded jobs. One worker = one bounded job; decompose at the caller, never tell a worker to self-spawn.'],
-      ['codex-companion', 'Split your pane and pair with a Codex sibling. NOTE: hardcodes gpt-5.5, needs updating to gpt-5.6-sol.'],
+      ['orchestrate', 'A whole project outliving the session, with persistent Herdr panes, a task list, and status contracts.'],
+      ['codex-companion', 'Split your pane and pair with a current Sol Codex sibling.'],
       ['iso', 'Isolated worktree pipeline: recon, synth, build, verify, land.'],
       ['task', 'Durable shared brain for work spanning sessions or agents. Start one before multi-session builds.'],
       ['session-checkpoint', 'Write/read checkpoints and run a verified live handoff to a fresh agent.'],
@@ -126,7 +94,7 @@ const CLUSTERS = [
     useWhen:
       'exploring an unfamiliar codebase, finding where something lives, tracing callers, ' +
       'or building a structural map before changing code. SERENA FIRST for anything symbol-shaped — ' +
-      'it returns structure instead of matching lines and costs a fraction of grep.',
+      'it returns structured symbol evidence with low context cost.',
     triggers: [
       'where does X live', 'what depends on', 'find the function', 'trace this call',
       'explain this subsystem', 'map the codebase', 'scan the project', 'who calls',
@@ -134,11 +102,11 @@ const CLUSTERS = [
     members: [
       // The four code-search skills are ordered by SCOPE — local tree, then one repo, then all public code.
       // Pick by WHERE the code lives, not by which tool you know. They do not overlap if you read this order.
-      ['unified-code-search', 'LOCAL ONLY — your working tree, nothing remote. Auto-picks rg / fd / ast-grep / ctags by query shape. Prefer Serena MCP first for symbols (find_symbol, find_referencing_symbols) — it returns structure, not matching lines. For anything across OTHER people\u2019s repos or GitHub-wide, this is the WRONG tool: use /code-search-campaign (in pb-research).'],
+      ['unified-code-search', 'LOCAL raw-text fallback for non-code assets after Serena transport failure. Keep it scoped to exact known paths. For other repositories, use /code-search-campaign.'],
       ['source-reference', "ONE known dependency you need to read properly. Fetches the package's or repo's REAL source into the workspace so you read actual code instead of guessing at an API. Use when you know WHICH library."],
       ['gitsearch', 'ONE quick `gh search` for repos / code / issues / PRs. Thin wrapper, fastest path when you just need a few examples. gh is installed and authenticated. For anything broader, use sourcegraph instead — gh search rate-limits and misses code-pattern detail.'],
       ['sourcegraph', 'ALL public code across GitHub/GitLab/Bitbucket, plus NPM package metadata. The wide net for ecosystem discovery and cross-repo patterns. Slower than gitsearch but far more thorough — use when one repo will not answer it.'],
-      ['siso-codex', 'Emit compressed .siso-wiki/ indexes so agents read ~500 tokens instead of grepping ~50K.'],
+      ['siso-codex', 'Emit compressed .siso-wiki/ indexes so agents read a small structural map instead of loading the tree.'],
       ['graphify', 'Any input to a knowledge graph with clustered communities and an audit report.'],
       ['agent-architecture', 'Lay out a repo so a cold-pickup agent gets O(1) orientation — and enforce it against rot.'],
       ['dedup-primitive', 'Read BEFORE collapsing duplicated helpers into one canonical copy.'],
@@ -239,13 +207,13 @@ function inventory() {
 
 // Prepended to the code-navigation router. Serena is the house default for symbol work:
 // it returns symbols and their locations instead of every matching line, so it is both
-// cheaper and more structured than grep. The serena-nudge PreToolUse hook urges the same
+// cheaper and more structured than raw text scans. The serena-nudge hook urges the same
 // thing at the tool boundary; this states it at the routing boundary.
 const SERENA_FIRST = `
 ## Reach for Serena before anything else here
 
 For any **symbol-shaped** question — where is this defined, who calls it, what does this
-file contain, what breaks if I change this — use Serena, not grep:
+file contain, what breaks if I change this — use Serena first:
 
 | You want | Serena call |
 |----------|-------------|
@@ -258,9 +226,8 @@ and that tool's args as \`tool_params_json\`. Never \`activate_project\` on the 
 Runtimes without native MCP use \`~/bin/serena-fast\` from inside the repo.
 Scope pattern searches to the narrowest useful \`relative_path\`.
 
-Grep is the fallback, not the default — correct for raw text (comments, strings, logs,
-config, non-code files) or a worktree Serena has not indexed. Falling back to grep only
-because a Serena transport erred is wrong: retry native MCP first.
+For raw text, logs, config, or non-code assets, use an exact known-path read. If Serena
+transport fails, retry native MCP before using a narrowly scoped non-code fallback.
 `;
 
 function buildPlaybookBody(cluster, resolved) {
@@ -272,9 +239,9 @@ function buildPlaybookBody(cluster, resolved) {
 **Use when:** ${cluster.useWhen}
 ${cluster.slug === 'pb-codenav' ? SERENA_FIRST : ''}
 
-This is a **router**, not a runbook. Pick the skill below, invoke it by name, and its
-full instructions load then — not before. If two look similar, read the "why" column;
-it says what distinguishes them.
+Use a known tool or skill directly and proceed with the task. If the capability is
+unclear, choose the relevant entry below. This catalog does not require extra
+scouting, planning, review, or delegation before implementation.
 
 ## Skills in this cluster
 
@@ -288,9 +255,10 @@ ${cluster.triggers.map((t) => `- "${t}"`).join('\n')}
 
 ## If nothing fits
 
-Fall back to the general pattern: scout cheaply first, delegate bulk reading to a
-Haiku/MiniMax worker with a CONSTRAINTS / RETURN / STOP contract, and keep judgment
-in the main thread. See \`/subagents\` for the routing table.
+Proceed with the task using the available tools and relevant project instructions.
+Delegate a bounded part only when it helps delivery; use the current \`subagents\`
+routing skill for that transport. Missing catalog coverage is not a reason to
+launch a scout or create a new process.
 
 ---
 *Generated by \`scripts/build-playbooks.mjs\` from the live skill inventory.
@@ -329,9 +297,9 @@ function main() {
     .filter((s) => !clustered.has(s.name) && !REFLEXES.has(s.name) && !s.name.startsWith('pb-'))
     .map((s) => s.name);
 
-  console.log(`\ntier 1 reflexes (keep full description): ${reflexes.join(', ')}`);
-  console.log(`tier 1 playbooks: ${CLUSTERS.length}`);
-  console.log(`tier 2 (description emptied): ${clustered.size}`);
+  console.log(`\nstandalone capabilities (metadata preserved): ${reflexes.join(', ')}`);
+  console.log(`optional scenario routers: ${CLUSTERS.length}`);
+  console.log(`referenced capabilities (metadata preserved): ${clustered.size}`);
   if (orphans.length) console.log(`ORPHANS (not in any cluster — left untouched): ${orphans.join(', ')}`);
 
   if (!APPLY) {
@@ -345,29 +313,19 @@ function main() {
     const dir = join(pbRoot, cluster.slug);
     mkdirSync(dir, { recursive: true });
     const desc =
-      `${cluster.title} — router. Use when: ${cluster.useWhen} ` +
-      `Triggers: ${cluster.triggers.slice(0, 6).map((t) => `"${t}"`).join(', ')}. ` +
-      `Routes to: ${resolved.map(([n]) => n).join(', ')}.`;
+      `Choose a capability for ${cluster.title.toLowerCase()} when the right tool or skill is unclear.`;
     const fm = `---\nname: ${cluster.slug}\ndescription: ${JSON.stringify(desc)}\n---\n\n`;
-    writeFileSync(join(dir, 'SKILL.md'), fm + buildPlaybookBody(cluster, resolved));
+    const outputPath = join(dir, 'SKILL.md');
+    const content = fm + buildPlaybookBody(cluster, resolved);
+    if (existsSync(outputPath)) {
+      if (readFileSync(outputPath, 'utf8') === content) continue;
+      copyFileSync(outputPath, `${outputPath}.bak-playbooks-${STAMP}`);
+    }
+    writeFileSync(outputPath, content);
     console.log(`  wrote ${cluster.slug}/SKILL.md (desc ${desc.length}ch, ${resolved.length} members)`);
   }
 
-  // 2. demote tier-2: empty the description, keep everything else
-  let demoted = 0;
-  for (const name of clustered) {
-    const s = inv.get(name);
-    if (!s) continue;
-    const { fm, body, raw } = parseFrontmatter(s.text);
-    if (!raw) continue;
-    if (/^description:\s*""\s*$/m.test(fm)) continue; // already demoted
-    copyFileSync(s.path, `${s.path}.bak-playbooks-${STAMP}`);
-    // replace the description line (may be multi-line / folded) with an empty one
-    const newFm = fm.replace(/^description:[\s\S]*?(?=^\w[\w-]*:|$)/m, 'description: ""\n');
-    writeFileSync(s.path, `---\n${newFm.replace(/\n+$/, '')}\n---\n${body}`);
-    demoted++;
-  }
-  console.log(`\ndemoted ${demoted} skills to tier 2 (backups: *.bak-playbooks-${STAMP})`);
+  console.log('Source skill descriptions preserved.');
   console.log('done.');
 }
 

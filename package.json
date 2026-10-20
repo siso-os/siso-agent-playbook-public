@@ -4,6 +4,7 @@
   "private": true,
   "description": "Repeatable multi-agent operating scenarios, skills, prompts, tools, gates, and telemetry.",
   "scripts": {
-    "test": "python3 scripts/check.py"
+    "test": "python3 scripts/check.py",
+    "test:owner-handoff": "node --test tests/owner-handoff-check.test.mjs"
   }
 }

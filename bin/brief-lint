@@ -6,7 +6,8 @@ Checks (worker briefs):
   MUST have a return contract  (RETURN / 'Return only' / OUTPUT / DONE.txt / PASS|FAIL)
   MUST have a stop bound       (STOP / 'stop after' / turn or file budget / 'one-shot')
   MUST NOT carry fan-out poison ('fan it WIDE', 'spawn sub-agents', recursive fan instructions)
-  MUST NOT carry reuse poison  ('continue your lane', 'keep this session', re-dispatch language)
+  Session continuation requires matching TASK and CONTINUES identifiers; unrelated tasks
+  still need fresh workers. Ordinary fixes are part of the same outcome.
 """
 import sys, re, os
 
@@ -21,7 +22,14 @@ if not re.search(r"\bSTOP\b|stop after|one[- ]shot|budget of \d+|at most \d+ (fi
     errors.append("no stop bound (add: STOP: <hard terminator — turn/file budget or completion condition>)")
 if re.search(r"fan\s+it\s+WIDE|spawn\s+(haiku\s+)?sub-?agents|fan\s+out\s+(more|further|recursively)", text, re.I):
     errors.append("fan-out poison: workers must not self-spawn (2026-07-09 drain mechanism)")
-if re.search(r"continue\s+your\s+lane|keep\s+(this\s+)?session|re-?use\s+(the\s+)?(pane|session)|next\s+task\s*:", text, re.I):
+task_ids = re.findall(r"^TASK:\s*(\S+)\s*$", text, re.M)
+continuation_ids = re.findall(r"^CONTINUES:\s*(\S+)\s*$", text, re.M)
+same_task = len(task_ids) == len(continuation_ids) == 1 and task_ids == continuation_ids
+if continuation_ids and not same_task:
+    errors.append("CONTINUES must match the brief's single TASK identifier")
+if re.search(r"next\s+task\s*:", text, re.I):
+    errors.append("unrelated next task: start a fresh worker with its own brief")
+elif re.search(r"continue\s+your\s+lane|keep\s+(this\s+)?session|re-?use\s+(the\s+)?(pane|session)", text, re.I) and not same_task:
     errors.append("reuse poison: one agent = one task; fresh pane per task (fresh-agent law)")
 if len(text) > 24000:
     warns.append(f"brief is {len(text)} bytes — MiniMax briefs should be <24k (context tax per turn)")
