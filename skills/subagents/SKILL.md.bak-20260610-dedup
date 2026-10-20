@@ -1,0 +1,78 @@
+---
+name: subagents
+description: How to run sub-agents in the SISO stack — which engine for which job (Claude Agent tool, Haiku→MiniMax, headless Codex / gpt-5.3-codex-spark / gpt-5.5), how to prompt for compact returns, when NOT to delegate. Load when spinning up workers, fanning out, or choosing a dispatch lane.
+---
+
+# Sub-agents — the SISO playbook
+
+Operator's manual for delegating work. The *why* (preserve main-thread context, delegate bulk reads) lives in CLAUDE.md § Context Discipline. This is the *how*: pick the lane, prompt it right, don't overdo it.
+
+## The three lanes
+
+| Lane | How to invoke | Routes to | Cost / speed | Use for |
+|---|---|---|---|---|
+| **Claude sub-agent** | built-in `Agent` tool, `subagent_type` + `model` | Opus/Sonnet → Claude (Max plan) | normal | reasoning, taste, multi-step work, anything needing judgment |
+| **Haiku sub-agent** | `Agent` tool with `model: haiku` | **MiniMax** (auto-routed by local Bifrost) | cheap, fast | research fan-out, verification, bulk mechanical edits, "check N things" |
+| **Codex headless** | `codex-fast "…"` (shell) | `gpt-5.3-codex-spark` (Cerebras, >1000 tok/s) | very fast, no MCP/hooks | fast mechanical/coding dispatch, second opinion |
+| **Codex review** | `codex-fast -m gpt-5.5 "…"` | gpt-5.5 | slower, deeper | adversarial review, hard diagnosis |
+| **Codex investigate** | `/codex:rescue` (say "spark" for fast) | Codex | — | "go figure out X", explicit fix requests |
+
+Haiku → MiniMax is **automatic** — just set `model: haiku` on the Agent call, no special command. (MiniMax throttles past ~5-6 concurrent; keep parallel Haiku fan-out ≤5.)
+
+## Choosing a lane (decision order)
+
+1. **Needs judgment / taste / multi-step reasoning?** → Claude `Agent` (Sonnet default; Opus only if genuinely hard).
+2. **Bulk, mechanical, or "read this and extract X"?** → Haiku sub-agent (cheap MiniMax). Fan out in parallel for breadth.
+3. **Fast code/edit dispatch, or want a non-Claude second opinion?** → `codex-fast`.
+4. **Want something refuted / hard-reviewed before you ship?** → `codex-fast -m gpt-5.5` (adversarial).
+
+## Claude Agent tool — the essentials
+
+```
+Agent(subagent_type=<type>, model=<haiku|sonnet|opus>, prompt=<task + return contract>)
+```
+
+- **Custom types** (in `~/.claude/agents/`): `researcher` (recon, no writes), `verifier` (test → PASS/FAIL), `worker` (execute one phase), `planner` (plans, read/write only). Otherwise `general-purpose`.
+- **One task per worker.** Don't hand a worker three jobs; spawn three workers.
+- **Parallelize independent work** — send multiple Agent calls in one turn. See `superpowers:dispatching-parallel-agents` for parallel-dispatch theory.
+
+## Prompt for compact returns (non-negotiable)
+
+A sub-agent's final message is the ONLY thing that re-enters your context. A verbose worker defeats the whole point. End every dispatch with an explicit return contract:
+
+> "Return only: the file:line and a one-sentence cause. No process narration, no raw file dumps, no re-explaining the task."
+
+Give the worker exactly the context it needs — never assume it sees your session. Construct its world.
+
+**Return contract template** — paste this into the worker's prompt so "done" always carries proof:
+
+```
+End your work by returning ONLY this block:
+status: <done|blocked|failed>
+verify_cmd: <the exact command you ran to check>
+verify_exit: <its integer exit code>
+evidence: <file:line or the last line of real output>
+```
+
+## When NOT to delegate
+
+Delegation preserves context but isn't free (spawn cost, round-trip). Do it inline when:
+- single-file edit, or reading 1–2 small files
+- a sub-10s bash command
+- the task is smaller than the prompt it'd take to delegate it
+
+Rule of thumb: if the worker's output is one number or one line you already know how to get, just get it.
+
+## Codex headless — notes
+
+- `codex-fast` runs with **no MCP servers and no hooks** (≈2× faster cold start). Stateless one-shots.
+- Default model `gpt-5.3-codex-spark` is the Cerebras fast path — great for mechanical/coding work, not deep reasoning.
+- `-m gpt-5.5` for the heavier reasoning/review pass.
+- Auth is ChatGPT-Pro (CLI login); no API key. Spark is not reachable any other way from here.
+
+## Verify, don't trust
+
+When a sub-agent reports a finding, treat it as a claim. If it matters, verify at the surface (run it, read the real output) — especially for Haiku/MiniMax workers on mechanical tasks. A confident wrong answer from a cheap worker is the main failure mode of fan-out.
+
+## Dependency
+Haiku→MiniMax routing needs the local Bifrost router up (launchd `com.maximhq.bifrost`). If Haiku sub-agents error on connect: `launchctl kickstart -k gui/$(id -u)/com.maximhq.bifrost`. Full detail: `~/.claude/reference.html`.

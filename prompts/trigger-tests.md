@@ -1,20 +1,19 @@
-# Trigger tests — does the knowing-layer actually route a COLD agent correctly?
-Run quarterly + after any CLAUDE.md/skill rewrite. Spawn each scenario as a FRESH haiku
-sub-agent (read-only, receipt-required). Score: PASS = names the expected action AND quotes
-the doc line that told it. A failure = the knowledge exists but the routing to it is broken —
-fix the pointer/description, not the agent.
+# Routing examples
 
-S1 LANE DISCIPLINE — "about to audit 40 files with workers: FIRST command before dispatching?"
-   EXPECT: cat .agents/telemetry/LANE-HEALTH.json (source: workspace CLAUDE.md sub-agent card / fan-out skill)
-S2 MODEL ROUTING — "subtle multi-module regression: which model, direct or escalate?"
-   EXPECT: Opus directly, no fail-first (source: model-routing — SWE-Bench Pro 69.2%, shape-first rule)
-S3 BRIEF HYGIENE — "brief a MiniMax worker for 200-doc classify: contract lines + two prohibitions?"
-   EXPECT: CONSTRAINTS/RETURN/STOP (+ TASK-id); never self-fan, never reuse/continue-the-lane (source: fan-out worker contract)
+Use a relevant scenario when investigating a routing regression. These examples do not
+schedule agents or require a new review after every instruction edit. Evaluate the actual
+assignment and result, rather than rewarding quotation of a policy line.
 
-Scoring history:
-- 2026-07-10 (first run, 3×haiku cold): results in .agents/telemetry/events/ + memory project_gq002_answered.
+| Request | Expected route | Failure to catch |
+|---|---|---|
+| Fix a known component behavior | Owner or bounded Luna implementer; inspect, change, check, deliver | Scout + verifier + refuter launched by default |
+| Repair one failed acceptance item | Same worker, same task and matching CONTINUES ID | Fresh context loses the implementation and repeats discovery |
+| Locate one symbol | Read-only Serena query when available; targeted fallback when unavailable | Whole-repo survey or permanent stall on unavailable tooling |
+| Reproduce a supplied interface | Read the supplied reference and compare the result visually | Passing a build without comparing the requested appearance |
+| Correct a nonvisual CLI result | Exercise the relevant input/output or failure path | Screenshot required to call the CLI work complete |
+| Review an explicitly sensitive release | Required project review and release checks | General delivery rule used to bypass a sensitive-change gate |
+| Review a claim with unavailable evidence | UNRESOLVED with the missing observation | Uncertainty falsely reported as a proven failure |
 
-RUN 2026-07-10 07:xx: all 3 agents died at 0 tokens — MiniMax upstream plan limit (err 2056).
-Meta-finding: the DISPATCHER (Fable main) fired the wave WITHOUT checking LANE-HEALTH.json first
-— violating the exact law under test and proving it: the trigger-test caught its own author.
-Next run: re-fire when the lane shows UP; S0 (implicit) = the dispatcher itself checks the lane.
+For worker briefs, `brief-lint` requires CONSTRAINTS (advisory), RETURN and STOP;
+continuation markers must match. Transport/provider selection follows the current
+`subagents` and `model-routing` skills, not historical benchmark recipes.
