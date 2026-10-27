@@ -7,7 +7,7 @@ description: How a product owner (one Opus integrator) drives up to 12 Sol build
 
 Source: `~/SISO_Workspace/_data/people-graph-research/2026-10-16-how-labs-build/PRINCIPLES.md`
 (sections 3, 4, 7, 8, 14; how Anthropic's Scion team and OpenAI ship). Written 16 Oct 2026, after a day
-when HALO had merged 54 PRs while DEV sat 3 hours on one SHA and only 2 builders were running.
+when a partner team had merged 54 PRs while DEV sat 3 hours on one SHA and only 2 builders were running.
 Building is rarely the bottleneck. Integration, CI and deploy are.
 
 ## Roles
